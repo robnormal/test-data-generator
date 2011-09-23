@@ -283,14 +283,6 @@ class EnumGenerator < Generator
     @set = set
   end
 
-  def each
-    if @unique
-      @set.sample n
-    else
-      super
-    end
-  end
-
   protected
 
   def generate_one
@@ -306,6 +298,7 @@ class EnumGenerator < Generator
   end
 
   def process_options options
+    super
     if options && options[:count]
       @count = options[:count]
     elsif @unique
@@ -325,9 +318,7 @@ class BelongsToGenerator < EnumGenerator
     process_options options
   end
 
-  protected
-
-  def generate_one
+  def each
     unless @set
       @set = Table.all(@table, @column)
     end
@@ -376,9 +367,9 @@ class Table
 
       generator = EnumGenerator.new      options
     when :belongs_to
-      options = enum_options args.last
       table   = args[0][0]
       column  = args[0][1]
+      options = enum_options args[1]
 
       if options[:unique]
         @@need_all << [table, column]
@@ -460,7 +451,7 @@ class Table
   end
 end
 
-a = Table.new 'authors', 3
+a = Table.new 'authors', 3000
 a.add 'id',         :id
 a.add 'first_name', :forgery, [:name, :first_name]
 a.add 'last_name',  :forgery, [:name, :last_name]
@@ -468,11 +459,15 @@ a.add 'email',      :forgery, [:email, :address], :unique => true
 a.add 'created_at', :datetime
 a.add 'updated_at', :datetime, :greater_than => [:authors, :created_at]
 
-b = Table.new 'books', 3
+b = Table.new 'books', 3000
 b.add 'id',        :id
-b.add 'author_id', :belongs_to, [:authors, :id], :unique => true
+b.add 'author_id', :belongs_to, [:authors, :id]
 b.add 'title',     :words, 2..4
 b.add 'isbn',      :string, :length => 20
 
-[a,b].each { |t| t.each_row { |row| p row } }
+c = Table.new 'phone_numbers', 3000
+c.add 'author_id', :belongs_to, [:authors, :id], :unique => true
+c.add 'number', :string, :length => 10, :chars => ('0'..'9')
+
+[a,b,c].each { |t| t.each_row { |row| p row } }
 
