@@ -59,7 +59,7 @@ class Column
   end
 
   def generate_one
-    if cached?
+    if being_selected_from?
       @last = @data[@values_produced]
     else
       @last = @generator.take(1).first
@@ -75,7 +75,7 @@ class Column
   end
 
   def all
-    if cached?
+    if being_selected_from?
       @data
     else
       raise "Column::all() called on uncached column #{@table.name}.#{@name}"
@@ -90,7 +90,7 @@ class Column
   @options
   @last
 
-  @cached
+  @being_selected_from
   @data
 
   def generate_all
@@ -99,19 +99,19 @@ class Column
     data
   end
 
-  def cached?
+  def being_selected_from?
     # only run on first call
-    if @cached == nil
-      @cached = @table.need_all? self
+    if @being_selected_from == nil
+      @being_selected_from = @table.need_all? self
 
-      if @cached
+      if @being_selected_from
         @data = generate_all
         @data.freeze
         @values_produced = 0
       end
     end
 
-    @cached
+    @being_selected_from
   end
 
 end
@@ -124,9 +124,9 @@ class Generator
       if @unique
         begin
           value = generate_one
-        end while @data.include? value
+        end while @data_tracker[value]
 
-        @data << value
+        @data_tracker[value] = true
         yield value
       else
         yield generate_one
@@ -136,7 +136,6 @@ class Generator
 
   protected
   @unique
-  @data
 
   def generate_one
     raise NotImplementedError, "Define #{self.class}::generate_one()"
@@ -145,9 +144,12 @@ class Generator
   def process_options options
     @unique = options && options[:unique]
     if @unique
-      @data = []
+      @data_tracker = {}
     end
   end
+
+  private
+  @data_tracker
 end
 
 class ForgeryGenerator < Generator
@@ -283,12 +285,24 @@ class EnumGenerator < Generator
     @set = set
   end
 
+  def each
+    if @unique
+      yield generate_one
+    else
+      super
+    end
+  end
+
   protected
 
   def generate_one
-    if @is_unique
+    if @unique
       if !@data
         @data = @set.sample(@count)
+      end
+
+      if @data.empty?
+        raise ArgumentError, "Ran out of data: #{@table.name}.#{@name}"
       end
 
       @data.shift
@@ -371,9 +385,7 @@ class Table
       column  = args[0][1]
       options = enum_options args[1]
 
-      if options[:unique]
-        @@need_all << [table, column]
-      end
+      @@need_all << [table, column]
 
       generator = BelongsToGenerator.new table, column, options
     when :string
@@ -451,7 +463,7 @@ class Table
   end
 end
 
-a = Table.new 'authors', 3000
+a = Table.new 'authors', 300000
 a.add 'id',         :id
 a.add 'first_name', :forgery, [:name, :first_name]
 a.add 'last_name',  :forgery, [:name, :last_name]
@@ -459,13 +471,13 @@ a.add 'email',      :forgery, [:email, :address], :unique => true
 a.add 'created_at', :datetime
 a.add 'updated_at', :datetime, :greater_than => [:authors, :created_at]
 
-b = Table.new 'books', 3000
+b = Table.new 'books', 300000
 b.add 'id',        :id
 b.add 'author_id', :belongs_to, [:authors, :id]
 b.add 'title',     :words, 2..4
 b.add 'isbn',      :string, :length => 20
 
-c = Table.new 'phone_numbers', 3000
+c = Table.new 'phone_numbers', 300000
 c.add 'author_id', :belongs_to, [:authors, :id], :unique => true
 c.add 'number', :string, :length => 10, :chars => ('0'..'9')
 
