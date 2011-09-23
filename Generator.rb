@@ -1,3 +1,7 @@
+def hash_map h, &blk
+  Hash[*(h.map &blk).flatten]
+end
+
 def iterate n
   data = []
   n.times { data << yield }
@@ -16,7 +20,7 @@ def rand_in *args
     elsif args[0].is_a? Numeric
       rand args[0]
     else
-      raise ArgumentError, "Improper arguments for rand_in"
+      raise ArgumentError, "Improper arguments for rand_in: #{args.to_s}"
     end
   when 2
     if args.all? { |x| x.is_a? Numeric }
@@ -59,10 +63,15 @@ module TestDataGenerator
     end
 
     def process_options options
+      options ||= {}
+      options = hash_map(options) { |k, v| [k.to_sym, v] }
+
       @unique = options && options[:unique]
       if @unique
         @data_tracker = {}
       end
+
+      options
     end
 
     private
@@ -71,8 +80,8 @@ module TestDataGenerator
 
   class ForgeryGenerator < Generator
     def initialize forgery_args, options = nil
-      f_class = forgery_args[0]
-      f_method = forgery_args[1]
+      f_class = forgery_args[0].to_sym
+      f_method = forgery_args[1].to_sym
       f_args = forgery_args[2, -1]
 
       @forgery = Forgery(f_class)
@@ -122,6 +131,7 @@ module TestDataGenerator
 
     def initialize options = nil
       options ||= {}
+      options = process_options options
 
       @chars = options[:chars] || WORD_CHARS
 
@@ -229,7 +239,8 @@ module TestDataGenerator
     end
 
     def process_options options
-      super
+      options = super
+
       if options && options[:count]
         @count = options[:count]
       elsif @unique
@@ -243,8 +254,8 @@ module TestDataGenerator
 
   class BelongsToGenerator < EnumGenerator
     def initialize table, column, options = nil
-      @table = table
-      @column = column
+      @table = table.to_sym
+      @column = column.to_sym
 
       process_options options
     end

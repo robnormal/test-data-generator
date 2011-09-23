@@ -2,17 +2,34 @@ module TestDataGenerator
   class Table
     attr_reader :name, :rows_produced, :num_rows
 
-    def initialize name, num_rows
+    def initialize name, num_rows, col_config = nil
       @name          = name.to_sym
       @num_rows      = num_rows
       @columns       = {}
       @rows_produced = 0
       @data          = {}
 
-      @@tables[name.to_sym] = self
+      @@tables[@name] = self
+
+      if col_config
+        col_config.each do |cfg|
+          col_name = cfg.shift
+          type     = cfg.shift
+          args     = cfg
+
+          add col_name, type, *args
+        end
+      end
     end
 
     def add column_name, type, *args
+      case column_name
+      when :id
+        type = :id
+      when /_at$/
+        type = :datetime
+      end
+
       case type
       when :forgery
         generator = ForgeryGenerator.new   *args
@@ -23,8 +40,8 @@ module TestDataGenerator
 
         generator = EnumGenerator.new      options
       when :belongs_to
-        table   = args[0][0]
-        column  = args[0][1]
+        table   = args[0][0].to_sym
+        column  = args[0][1].to_sym
         options = enum_options args[1]
 
         @@need_all << [table, column]

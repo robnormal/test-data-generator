@@ -86,23 +86,77 @@ module TestDataGenerator
   end
 end
 
-a = TestDataGenerator::Table.new 'authors', 30
-a.add 'id',         :id
-a.add 'first_name', :forgery, [:name, :first_name]
-a.add 'last_name',  :forgery, [:name, :last_name]
-a.add 'email',      :forgery, [:email, :address], :unique => true
-a.add 'created_at', :datetime
-a.add 'updated_at', :datetime, :greater_than => [:authors, :created_at]
+=begin
+require "yaml"
+config = YAML::load_file(File.dirname(__FILE__) + '/config.yml')
+tables = config.map do |table, info|
+  t = TestDataGenerator::Table.new table, info['rows']
 
-b = TestDataGenerator::Table.new 'books', 30
-b.add 'id',        :id
-b.add 'author_id', :belongs_to, [:authors, :id]
-b.add 'title',     :words, 2..4
-b.add 'isbn',      :string, :length => 20
+  info['columns'].each do |c, col_def|
+    case c
+    when 'id'
+      t.add c, :id
+    when 'created_at'
+      t.add c, :datetime
+    when 'updated_at'
+      if info['columns']['created_at']
+        t.add c, :datetime, :greater_than => [t.to_sym, :created_at]
+      else
+        t.add c, :datetime
+      end
+    else
+      unless col_def
+        raise "No config info for #{t}.#{c}"
+      end
 
-c = TestDataGenerator::Table.new 'phone_numbers', 30
-c.add 'author_id', :belongs_to, [:authors, :id], :unique => true
-c.add 'number', :string, :length => 10, :chars => ('0'..'9')
+      # if just a scalar, assume it is the column type
+      if col_def.is_a? String
+        t.add c, col_def.to_sym
+      else
+        unique       = col_def.delete 'unique'
+        greater_than = col_def.delete 'greater_than'
+
+        # only one entry can be left, or else the file is invalid
+        if col_def.size == 1
+          type, args = col_def.first
+          args ||= []
+
+          if args.is_a? Array
+            t.add c, type.to_sym, *args
+          else
+            t.add c, type.to_sym, args
+          end
+        else
+          raise "Unknown column info: " + col_def.keys.to_s
+        end
+      end
+    end
+  end
+
+  t
+end
+=end
+
+a = TestDataGenerator::Table.new 'authors', 3, [
+  [:id],
+  [:first_name, :forgery, [:name, :first_name]],
+  [:last_name,  :forgery, [:name, :last_name]],
+  [:email,      :forgery, [:email, :address], :unique => true],
+  [:created_at],
+  [:updated_at, :datetime, :greater_than => [:authors, :created_at]]
+]
+
+b = TestDataGenerator::Table.new 'books', 3, [
+  [:id],
+  [:author_id, :belongs_to, [:authors, :id]],
+  [:title,     :words, 2..4],
+  [:isbn,      :string, :length => 20]
+]
+
+c = TestDataGenerator::Table.new 'phone_numbers', 3, [
+  [:author_id, :belongs_to, [:authors, :id], :unique => true],
+  [:number,     :string, :length => 10, :chars => ('0'..'9')]
+]
 
 [a,b,c].each { |t| t.each_row { |row| p row } }
 
