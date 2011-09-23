@@ -8,15 +8,14 @@ def rand_in *args
   case args.size
   when 1
     if args[0].is_a? Enumerable
-      set = args[0].to_a
-      set[rand set.size]
+      args[0].to_a.sample
     elsif args[0].is_a? Numeric
       rand args[0]
     else
       raise ArgumentError, "Improper arguments for rand_in"
     end
   when 2
-    if args.any? { |x| x.is_a? Numeric }
+    if args.all? { |x| x.is_a? Numeric }
       min = args[0]
       max = args[1]
 
@@ -50,6 +49,7 @@ class Column
     @table   = table
     @name    = name
     @options = options
+    @values_produced = 0
 
     if generator.is_a? Generator
       @generator = generator
@@ -59,72 +59,123 @@ class Column
   end
 
   def generate_one
-    @last = @generator.generate_one
+    if cached?
+      @last = @data[@values_produced]
+    else
+      @last = @generator.take(1).first
+    end
+
+    @values_produced += 1
+    @last
+  end
+
+  def current
+    generate_one until @values_produced == @table.rows_produced
+    @last
+  end
+
+  def all
+    if cached?
+      @data
+    else
+      raise "Column::all() called on uncached column #{@table.name}.#{@name}"
+    end
   end
 
   private
   @table
   @name
+  @values_produced
   @generator
   @options
   @last
+
+  @cached
+  @data
+
+  def generate_all
+    count = @table.num_rows
+    data = @generator.take count
+    data
+  end
+
+  def cached?
+    # only run on first call
+    if @cached == nil
+      @cached = @table.need_all? self
+
+      if @cached
+        @data = generate_all
+        @data.freeze
+        @values_produced = 0
+      end
+    end
+
+    @cached
+  end
+
 end
 
 class Generator
+  include Enumerable
 
-  def generate n
-    if @unique
-      unique(n) &:generate_one
-    else
-      iterate(n) &:generate_one
+  def each
+    loop do
+      if @unique
+        begin
+          value = generate_one
+        end while @data.include? value
+
+        @data << value
+        yield value
+      else
+        yield generate_one
+      end
     end
-  end
-
-  def unique n, &func
-    while @data.size < n do
-      datum = func[]
-      @data << datum unless @data.include?
-    end
-    @data
-  end
-
-  def unique_reset
-    @data = []
-  end
-
-  def generate_one
-    raise NotImplementedError, "Define #{self.class}::generate_one()"
   end
 
   protected
   @unique
   @data
+
+  def generate_one
+    raise NotImplementedError, "Define #{self.class}::generate_one()"
+  end
+
+  def process_options options
+    @unique = options && options[:unique]
+    if @unique
+      @data = []
+    end
+  end
 end
 
 class ForgeryGenerator < Generator
-  def initialize forgery_type, forgery_method, *args
-    @forgery = Forgery(forgery_type)
-    @forgery_method = forgery_method
-    @forgery_args = args
-  end
+  def initialize forgery_args, options = nil
+    f_class = forgery_args[0]
+    f_method = forgery_args[1]
+    f_args = forgery_args[2, -1]
 
-  def generate_one
-    if @forgery_args.size
-      @forgery.send(@forgery_method, *@forgery_args)
-    else
-      @forgery.send(@forgery_method)
-    end
+    @forgery = Forgery(f_class)
+    @forgery_method = f_method
+    @forgery_args = f_args || []
+
+    process_options options
   end
 
   protected
   @forgery
-  @forgery_method 
-  @forgery_args 
+  @forgery_method
+  @forgery_args
+
+  def generate_one
+    @forgery.send(@forgery_method, *@forgery_args)
+  end
 end
 
 class WordGenerator < ForgeryGenerator
-  def initialize count
-    super :basic, :words
+  def initialize count, options = nil
+    super [:lorem_ipsum, :words], options
     @count = count
   end
 
@@ -136,8 +187,10 @@ class WordGenerator < ForgeryGenerator
     end
   end
 
+  protected
+
   def generate_one
-    @forgery.send(@forgery_method, num_words)
+    @forgery.send(@forgery_method, num_words, :random => true)
   end
 
   private
@@ -149,7 +202,6 @@ class StringGenerator < Generator
   WORD_CHARS = ('0'..'9').to_a + ('A'..'Z').to_a + ('a'..'z').to_a << '_'
 
   def initialize options = nil
-    super
     options ||= {}
 
     @chars = options[:chars] || WORD_CHARS
@@ -164,6 +216,8 @@ class StringGenerator < Generator
     end
   end
 
+  protected
+
   def generate_one
     if @length
       length = @length
@@ -171,7 +225,7 @@ class StringGenerator < Generator
       length = rand_in @min_length, @max_length
     end
 
-    iterate(length) { rand_in @chars }
+    (iterate(length) { rand_in @chars }).join
   end
 
   @min_length
@@ -190,26 +244,33 @@ class NumberGenerator < Generator
     end
 
     if options[:greater_than]
-      table, column = *options[:greater_than] 
+      table, column = *options[:greater_than]
       @greater_than = { :table => table, :column => column }
     else
       @min = options[:min] || 0
     end
   end
 
+  protected
+
   def generate_one
     if @greater_than
       current = Table.current(@greater_than[:table], @greater_than[:column]) || 0
-      min = if current > @min then current else @min end # make sure to enforce this rule!
+
+      # enforce min requirement, if present
+      if @min && @min > current
+        min = @min
+      else
+        min = current
+      end
+
     else
       min = @min
     end
 
-      p @max, min, @greater_than
     rand_in min, @max
   end
 
-  protected
   @greater_than
   @min
   @max
@@ -222,19 +283,56 @@ class EnumGenerator < Generator
     @set = set
   end
 
+  def each
+    if @unique
+      @set.sample n
+    else
+      super
+    end
+  end
+
+  protected
+
+  def generate_one
+    if @is_unique
+      if !@data
+        @data = @set.sample(@count)
+      end
+
+      @data.shift
+    else
+      @set.sample
+    end
+  end
+
+  def process_options options
+    if options && options[:count]
+      @count = options[:count]
+    elsif @unique
+      raise ArgumentError, 'Unique EnumGenerator requires a :count option - the total number of values expected'
+    end
+  end
+
   private
   @set
 end
 
-class BelongsToGenerator < Generator
+class BelongsToGenerator < EnumGenerator
   def initialize table, column, options = nil
     @table = table
     @column = column
+
+    process_options options
   end
 
-  def generate n
-    options = Table.all(table, column)
-    EnumGenerator.new(options).generate n
+  protected
+
+  def generate_one
+    unless @set
+      @set = Table.all(@table, @column)
+    end
+
+    super
   end
 
   private
@@ -252,17 +350,13 @@ class DateTimeGenerator < NumberGenerator
     super options
   end
 
-  def generate n
-    map(super) { Time.new(n).strftime(MYSQL_FORMAT) }
-  end
-
 end
 
 class Table
-  attr_reader :name
+  attr_reader :name, :rows_produced, :num_rows
 
   def initialize name, num_rows
-    @name          = name
+    @name          = name.to_sym
     @num_rows      = num_rows
     @columns       = {}
     @rows_produced = 0
@@ -274,27 +368,46 @@ class Table
   def add column_name, type, *args
     case type
     when :forgery
-      forgery_args = args.first
-      generator = ForgeryGenerator.new   forgery_args[0], forgery_args[1], *forgery_args[2,-1]
+      generator = ForgeryGenerator.new   *args
+    when :words
+      generator = WordGenerator.new      *args
+    when :enum
+      options = enum_options args.last
+
+      generator = EnumGenerator.new      options
     when :belongs_to
-      generator = BelongsToGenerator.new args[0][0], args[0][1], args[1]
+      options = enum_options args.last
+      table   = args[0][0]
+      column  = args[0][1]
+
+      if options[:unique]
+        @@need_all << [table, column]
+      end
+
+      generator = BelongsToGenerator.new table, column, options
     when :string
-      generator = StringGenerator.new    args[0]
+      generator = StringGenerator.new    *args
     when :datetime
-      generator = DateTimeGenerator.new  args[0]
+      generator = DateTimeGenerator.new  *args
     when :id
       generator = NumberGenerator.new    :unique => true, :min => 1, :max => 2147483647
+    else
+      raise ArgumentError, "Unknown generator type: #{type}"
     end
 
-    @columns[column_name.to_sym] = Column.new self, column_name, generator
+    @columns[column_name.to_sym] = Column.new self, column_name.to_sym, generator
+  end
+
+  def column column_name
+    @columns[column_name]
   end
 
   def current column_name
-    @columns[column_name].last
+    @columns[column_name].current
   end
 
   def all column_name
-    @columns[column_name].generate @num_rows
+    @columns[column_name].all
   end
 
   def self.current table_name, column_name
@@ -302,28 +415,52 @@ class Table
   end
 
   def self.all table_name, column_name
-    @@table_name[table_name].all column_name
+    @@tables[table_name].all column_name
+  end
+
+  def self.table table_name
+    @@tables[table_name]
+  end
+
+  def need_all? column
+    @@need_all.include? [@name, column.name]
+  end
+
+  def add_value column_name, value
+    @data[column_name] ||= []
+    @data[column_name] << value
   end
 
   def each_row
-    yield row
+    @num_rows.times { yield row }
   end
 
   def row
     @rows_produced += 1
-    # record column data, and return row
-    zipall(@columns.values.map { |c| @data[c.name] = c.generate_one })
+    @columns.values.map &:generate_one
   end
 
   private
   @@tables = {}
+  @@need_all = []
+
   @columns
   @num_rows
   @rows_produced
   @data
+
+  def enum_options options
+    options ||= {}
+
+    if options[:unique]
+      options[:count] = @num_rows
+    end
+
+    options
+  end
 end
 
-a = Table.new 'authors', 100
+a = Table.new 'authors', 3
 a.add 'id',         :id
 a.add 'first_name', :forgery, [:name, :first_name]
 a.add 'last_name',  :forgery, [:name, :last_name]
@@ -331,11 +468,11 @@ a.add 'email',      :forgery, [:email, :address], :unique => true
 a.add 'created_at', :datetime
 a.add 'updated_at', :datetime, :greater_than => [:authors, :created_at]
 
-b = Table.new 'books', 100
-a.add 'id',        :id
-a.add 'author_id', :belongs_to, [:authors, :id]
-a.add 'title',     :words, 2..4
-a.add 'isbn',      :string, :length => 20
+b = Table.new 'books', 3
+b.add 'id',        :id
+b.add 'author_id', :belongs_to, [:authors, :id], :unique => true
+b.add 'title',     :words, 2..4
+b.add 'isbn',      :string, :length => 20
 
-[a,b].each { |t| t.each_row { |row| puts row } }
+[a,b].each { |t| t.each_row { |row| p row } }
 
