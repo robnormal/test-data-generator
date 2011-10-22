@@ -1,5 +1,7 @@
 module TestDataGenerator
   class Table
+    include Enumerable
+
     attr_reader :name, :rows_produced, :num_rows
 
     def initialize name, num_rows, col_config = nil
@@ -93,7 +95,7 @@ module TestDataGenerator
       @data[column_name] << value
     end
 
-    def each_row
+    def each
       @num_rows.times { yield row }
     end
 
