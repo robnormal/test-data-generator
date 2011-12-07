@@ -22,6 +22,9 @@ module TestDataGenerator
 
       if generator.is_a? Generator
         @generator = generator
+        if options && options[:null]
+          @generator.set_null options[:null]
+        end
       else
         raise ArgumentError, "Argument 3 for Column.new must be a Generator"
       end

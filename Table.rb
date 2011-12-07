@@ -67,7 +67,10 @@ module TestDataGenerator
         raise ArgumentError, "Unknown generator type: #{type}"
       end
 
-      @columns[column_name.to_sym] = Column.new self, column_name.to_sym, generator
+      last_arg = args.last
+      optional_args = if last_arg.is_a? Hash then last_arg else nil end
+
+      @columns[column_name.to_sym] = Column.new self, column_name.to_sym, generator, optional_args
     end
 
     def column column_name

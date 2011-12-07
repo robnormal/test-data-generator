@@ -29,7 +29,8 @@ def rand_in *args
       min = args[0]
       max = args[1]
 
-      rand(max - min) + min
+      # min, max are _inclusive_
+      rand(max - min + 1) + min
     else
       rand (args[0]..args[1]).to_a
     end
@@ -44,21 +45,33 @@ module TestDataGenerator
 
     def each
       loop do
-        if @unique
-          begin
-            value = generate_one
-          end while @data_tracker[value]
-
-          @data_tracker[value] = true
-          yield value
+        if @null && rand < @null
+          yield nil
         else
-          yield generate_one
+
+          if @unique
+            begin
+              value = generate_one
+            end while @data_tracker[value]
+
+            @data_tracker[value] = true
+            yield value
+          else
+            yield generate_one
+          end
+
         end
       end
     end
 
+    # how often generator should return nil
+    def set_null percent
+      @null = percent
+    end
+
     protected
     @unique
+    @null
 
     def generate_one
       raise NotImplementedError, "Define #{self.class}::generate_one()"
