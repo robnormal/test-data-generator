@@ -1,3 +1,7 @@
+require 'forgery'
+require(File.dirname(__FILE__) + '/Generator.rb')
+require(File.dirname(__FILE__) + '/Column.rb')
+
 module TestDataGenerator
   class Table
     include Enumerable
@@ -55,6 +59,10 @@ module TestDataGenerator
         generator = DateTimeGenerator.new  *args
       when :id
         generator = NumberGenerator.new    :unique => true, :min => 1, :max => 2147483647
+      when :bool, :boolean
+        generator = NumberGenerator.new    :min => 0, :max => 1
+      when :url
+        generator = UrlGenerator.new       *args
       else
         raise ArgumentError, "Unknown generator type: #{type}"
       end
@@ -101,7 +109,7 @@ module TestDataGenerator
 
     def row
       @rows_produced += 1
-      @columns.values.map &:generate_one
+      @columns.values.map &:current
     end
 
     private

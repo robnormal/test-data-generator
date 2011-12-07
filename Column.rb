@@ -39,8 +39,13 @@ module TestDataGenerator
     end
 
     def current
-      generate_one until @values_produced == @table.rows_produced
-      @last
+      generate_one until @values_produced >= @table.rows_produced
+
+      if being_selected_from?
+        @data[@table.rows_produced - 1]
+      else
+        @last
+      end
     end
 
     def all
@@ -136,27 +141,4 @@ tables = config.map do |table, info|
   t
 end
 =end
-
-a = TestDataGenerator::Table.new 'authors', 3, [
-  [:id],
-  [:first_name, :forgery, [:name, :first_name]],
-  [:last_name,  :forgery, [:name, :last_name]],
-  [:email,      :forgery, [:email, :address], :unique => true],
-  [:created_at],
-  [:updated_at, :datetime, :greater_than => [:authors, :created_at]]
-]
-
-b = TestDataGenerator::Table.new 'books', 3, [
-  [:id],
-  [:author_id, :belongs_to, [:authors, :id]],
-  [:title,     :words,      2..4],
-  [:isbn,      :string,     :length => 20]
-]
-
-c = TestDataGenerator::Table.new 'phone_numbers', 3, [
-  [:author_id, :belongs_to, [:authors, :id], :unique => true],
-  [:number,    :string,     :length => 10, :chars => ('0'..'9')]
-]
-
-[a,b,c].each { |t| t.each_row { |row| p row } }
 

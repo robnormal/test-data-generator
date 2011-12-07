@@ -24,4 +24,3 @@ c = TestDataGenerator::Table.new 'phone_numbers', 3, [
 
 [a,b,c].each { |t| t.each { |row| p row } }
 
-

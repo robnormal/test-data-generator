@@ -1,5 +1,7 @@
+require 'forgery'
+
 def hash_map h, &blk
-  Hash[*(h.map &blk).flatten]
+  Hash[*(h.map &blk).flatten(1)]
 end
 
 def iterate n
@@ -135,11 +137,17 @@ module TestDataGenerator
 
       @chars = options[:chars] || WORD_CHARS
 
+      if options[:length].is_a? Range
+        options[:min_length] = options[:length].min
+        options[:max_length] = options[:length].max
+        options.delete :length
+      end
+
       if options[:length]
         @length = options[:length]
       elsif options[:max_length]
-        @max_length = options[:max_length]
         @min_length = options[:min_length] || 1
+        @max_length = options[:max_length]
       else
         raise ArgumentError, "#{self.class} requires :length or :max_length option"
       end
@@ -250,6 +258,17 @@ module TestDataGenerator
 
     private
     @set
+  end
+
+  class UrlGenerator < Generator
+    def initialize options = nil
+      @forgery = Forgery(:internet)
+    end
+
+    def generate_one
+      domain = @forgery.send :domain_name
+      'http://' + domain
+    end
   end
 
   class BelongsToGenerator < EnumGenerator
