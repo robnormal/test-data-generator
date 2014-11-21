@@ -23,8 +23,6 @@ def rand_between(min, max)
 end
 
 module TestDataGenerator
-  # every subclass must define:
-  # generate_one()
   class Generator
     include Enumerable
 
@@ -40,6 +38,7 @@ module TestDataGenerator
 
     protected
 
+    # every subclass must define
     def generate_one
       raise NotImplementedError, "Define #{self.class}::generate_one()"
     end
@@ -64,6 +63,7 @@ module TestDataGenerator
     end
   end
 
+  # creates lorem ipsum verbiage
   class WordGenerator < ForgeryGenerator
     def initialize(count, options = {})
       super([:lorem_ipsum, :words], options)
@@ -88,6 +88,7 @@ module TestDataGenerator
     @count
   end
 
+  # random strings
   class StringGenerator < Generator
     ALL_CHARS  = ('!'..'z').to_a
     WORD_CHARS = ('0'..'9').to_a + ('A'..'Z').to_a + ('a'..'z').to_a << '_'
