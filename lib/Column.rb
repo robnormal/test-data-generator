@@ -3,38 +3,31 @@ require(File.dirname(__FILE__) + '/Generator.rb')
 require(File.dirname(__FILE__) + '/Table.rb')
 
 module TestDataGenerator
-  def zipall as
-    if as.size > 0
-      as.first.zip(as[1..-1])
-    else
-      []
-    end
-  end
-
   class Column
-    attr_reader :name, :last, :table
+    attr_reader :name, :table
 
-    def initialize table, name, generator, options = nil
-      @table   = table
-      @name    = name
-      @options = options
-      @values_produced = 0
-
+    def initialize(table, name, generator, options = {})
       if generator.is_a? Generator
-        @generator = generator
-        if options && options[:null]
-          @generator.set_null options[:null]
+        if options[:null]
+          @generator = NullGenerator.new generator
+        else
+          @generator = generator
         end
       else
         raise ArgumentError, "Argument 3 for Column.new must be a Generator"
       end
+
+      @table   = table
+      @name    = name.to_sym
+      @options = options
+      @values_produced = 0
     end
 
     def generate_one
       if being_selected_from?
         @last = @data[@values_produced]
       else
-        @last = @generator.take(1).first
+        @last = @generator.first
       end
 
       @values_produced += 1

@@ -8,27 +8,27 @@ module TestDataGenerator
 
     attr_reader :name, :rows_produced, :num_rows
 
-    def initialize name, num_rows, col_config = nil
+    def initialize(name, num_rows, col_config = {})
       @name          = name.to_sym
       @num_rows      = num_rows
-      @columns       = {}
       @rows_produced = 0
+      @columns       = {}
       @data          = {}
 
+      # register this table with the class
       @@tables[@name] = self
 
-      if col_config
-        col_config.each do |cfg|
-          col_name = cfg.shift
-          type     = cfg.shift
-          args     = cfg
+      col_config.each do |cfg|
+        col_name = cfg.shift
+        type     = cfg.shift
+        args     = cfg
 
-          add col_name, type, *args
-        end
+        add(col_name, type, *args)
       end
     end
 
-    def add column_name, type, *args
+    def add(column_name, type, *args)
+      # name-based type magic
       case column_name
       when :id
         type = :id
@@ -37,14 +37,24 @@ module TestDataGenerator
       end
 
       case type
+      when :string
+        generator = StringGenerator.new(*args)
+      when :datetime
+        generator = DateTimeGenerator.new(*args)
       when :forgery
-        generator = ForgeryGenerator.new   *args
+        generator = ForgeryGenerator.new(*args)
       when :words
-        generator = WordGenerator.new      *args
+        generator = WordGenerator.new(*args)
+      when :url
+        generator = UrlGenerator.new(*args)
+      when :bool, :boolean
+        generator = NumberGenerator.new(min: 0, max: 1)
       when :enum
-        options = enum_options args.last
-
-        generator = EnumGenerator.new      options
+        generator = EnumGenerator.new(enum_options args.last)
+      when :id
+        # id should be unique integer
+        args << :unique
+        generator = NumberGenerator.new(min: 1, max: 2147483647)
       when :belongs_to
         table   = args[0][0].to_sym
         column  = args[0][1].to_sym
@@ -52,65 +62,56 @@ module TestDataGenerator
 
         @@need_all << [table, column]
 
-        generator = BelongsToGenerator.new table, column, options
-      when :string
-        generator = StringGenerator.new    *args
-      when :datetime
-        generator = DateTimeGenerator.new  *args
-      when :id
-        num = NumberGenerator.new          :min => 1, :max => 2147483647
-        generator = UniqueGenerator.new(num)
-      when :bool, :boolean
-        generator = NumberGenerator.new    :min => 0, :max => 1
-      when :url
-        generator = UrlGenerator.new       *args
+        generator = BelongsToGenerator.new(table, column, options)
       else
         raise ArgumentError, "Unknown generator type: #{type}"
       end
 
       if args.include?(:unique) and !generator.handles_unique?
-        generator = UniqueGenerator.new generator
+        generator = UniqueGenerator.new(generator)
       end
 
+      # null must come after unique, since NULL is not a "unique" value
       if args.include?(:null)
-        generator = NullGenerator.new generator
+        generator = NullGenerator.new(generator)
       end
 
-      last_arg = args.last
-      optional_args = if last_arg.is_a?(Hash) then last_arg else nil end
+      optional_args = if args.last.is_a?(Hash) then args.last else {} end
 
-      @columns[column_name.to_sym] = Column.new(self, column_name.to_sym, generator, optional_args)
+      @columns[column_name.to_sym] = Column.new(
+        self, column_name.to_sym, generator, optional_args
+      )
     end
 
-    def column column_name
+    def column(column_name)
       @columns[column_name]
     end
 
-    def current column_name
+    def current(column_name)
       @columns[column_name].current
     end
 
-    def all column_name
+    def all(column_name)
       @columns[column_name].all
     end
 
-    def self.current table_name, column_name
+    def self.current(table_name, column_name)
       @@tables[table_name].current column_name
     end
 
-    def self.all table_name, column_name
+    def self.all(table_name, column_name)
       @@tables[table_name].all column_name
     end
 
-    def self.table table_name
+    def self.table(table_name)
       @@tables[table_name]
     end
 
-    def need_all? column
+    def need_all?(column)
       @@need_all.include? [@name, column.name]
     end
 
-    def add_value column_name, value
+    def add_value(column_name, value)
       @data[column_name] ||= []
       @data[column_name] << value
     end
@@ -133,7 +134,7 @@ module TestDataGenerator
     @rows_produced
     @data
 
-    def enum_options options
+    def enum_options(options)
       options ||= {}
 
       if options[:unique]
