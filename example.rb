@@ -1,5 +1,5 @@
-require_relative('Table.rb')
-require_relative('Column.rb')
+require_relative('lib/Table.rb')
+require_relative('lib/Column.rb')
 
 a = TestDataGenerator::Table.new 'authors', 3, [
   [:id],
