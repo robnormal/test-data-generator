@@ -6,14 +6,14 @@ def hash_map(h, &blk)
 end
 
 # run the block n times, and return the output as an array
-def iterate n
+def iterate(n)
   data = []
   n.times { data << yield }
   data
 end
 
 # choose random element from an Enumerable
-def rand_in xs
+def rand_in(xs)
   xs.to_a.sample
 end
 
@@ -46,11 +46,152 @@ module TestDataGenerator
 
   end
 
+  # Generates data using the forgery library
+  class ForgeryGenerator < Generator
+    def initialize(forgery_args, options = {})
+      @forgery        = Forgery(forgery_args[0].to_sym)
+      @forgery_method = forgery_args[1].to_sym
+      @forgery_args   = forgery_args[2, -1] || []
+    end
+
+    protected
+    @forgery
+    @forgery_method
+    @forgery_args
+
+    def generate_one
+      @forgery.send(@forgery_method, *@forgery_args)
+    end
+  end
+
+  class WordGenerator < ForgeryGenerator
+    def initialize(count, options = {})
+      super([:lorem_ipsum, :words], options)
+      @count = count
+    end
+
+    def num_words
+      if @count.is_a? Integer
+        @count
+      else
+        rand(@count)
+      end
+    end
+
+    protected
+
+    def generate_one
+      @forgery.send(@forgery_method, num_words, random: true)
+    end
+
+    private
+    @count
+  end
+
+  class StringGenerator < Generator
+    ALL_CHARS  = ('!'..'z').to_a
+    WORD_CHARS = ('0'..'9').to_a + ('A'..'Z').to_a + ('a'..'z').to_a << '_'
+
+    def initialize(chars: WORD_CHARS, length: nil, min_length: 1, max_length: nil)
+      @chars = chars
+
+      if length.is_a? Range
+        min_length = length.min
+        max_length = length.max
+        length = nil
+      end
+
+      if length
+        @length = length
+      elsif max_length
+        @min_length = min_length
+        @max_length = max_length
+      else
+        raise(ArgumentError, "#{self.class} requires :length or :max_length option")
+      end
+    end
+
+    protected
+
+    def generate_one
+      length = @length || rand_between(@min_length, @max_length)
+
+      (iterate(length) { rand_in @chars }).join
+    end
+
+    @min_length
+    @max_length
+    @length # exact length for all values
+    @chars # set of characters to choose from
+  end
+
+  class NumberGenerator < Generator
+    def initialize(max: nil, greater_than: nil, min: 0)
+      if max
+        @max = max
+      else
+        raise(ArgumentError, "#{self.class} requires :max option")
+      end
+
+      if greater_than
+        table, column = *greater_than
+        @greater_than = { table: table, column: column }
+      else
+        @min = min || 0
+      end
+    end
+
+    protected
+
+    def generate_one
+      if @greater_than
+        current = Table.current(@greater_than[:table], @greater_than[:column]) || 0
+
+        # enforce min requirement, if present
+        if @min && @min > current
+          min = @min
+        else
+          min = current
+        end
+
+      else
+        min = @min
+      end
+
+      rand_between(min, @max)
+    end
+
+    @greater_than
+    @min
+    @max
+  end
+
+  class UrlGenerator < Generator
+    def initialize(options = nil)
+      @forgery = Forgery(:internet)
+    end
+
+    def generate_one
+      domain = @forgery.send :domain_name
+      'http://' + domain
+    end
+  end
+
+  class DateTimeGenerator < NumberGenerator
+    MYSQL_FORMAT = 'Y-m-d H:M:S'
+
+    def initialize(options = {})
+      options[:max] ||= Time.now().to_i
+
+      super(options)
+    end
+  end
+
   # Decorator class
   class UniqueGenerator < Generator
-    def initialize(gen, options = {})
+    def initialize(gen, max: nil)
       @generator = gen
-      @max = options[:max]
+      @max = max
       @count = 0
       @data_tracker = {}
     end
@@ -62,7 +203,7 @@ module TestDataGenerator
         raise(RangeError, "No more unique data; all #{@max} unique values have been used")
       else
         begin
-          value = @generator.take(1).first
+          value = @generator.first
         end while @data_tracker[value]
 
         @data_tracker[value] = true
@@ -101,138 +242,6 @@ module TestDataGenerator
     @data_tracker
   end
 
-  # Generates data using the forgery library
-  class ForgeryGenerator < Generator
-    def initialize(forgery_args, options = {})
-      f_class = forgery_args[0].to_sym
-      f_method = forgery_args[1].to_sym
-      f_args = forgery_args[2, -1]
-
-      @forgery = Forgery(f_class)
-      @forgery_method = f_method
-      @forgery_args = f_args || []
-
-    end
-
-    protected
-    @forgery
-    @forgery_method
-    @forgery_args
-
-    def generate_one
-      @forgery.send(@forgery_method, *@forgery_args)
-    end
-  end
-
-  class WordGenerator < ForgeryGenerator
-    def initialize count, options = nil
-      super [:lorem_ipsum, :words], options
-      @count = count
-    end
-
-    def num_words
-      if @count.is_a? Integer
-        @count
-      else
-        rand(@count)
-      end
-    end
-
-    protected
-
-    def generate_one
-      @forgery.send(@forgery_method, num_words, :random => true)
-    end
-
-    private
-    @count
-  end
-
-  class StringGenerator < Generator
-    ALL_CHARS  = ('!'..'z').to_a
-    WORD_CHARS = ('0'..'9').to_a + ('A'..'Z').to_a + ('a'..'z').to_a << '_'
-
-    def initialize options = nil
-      options ||= {}
-
-      @chars = options[:chars] || WORD_CHARS
-
-      if options[:length].is_a? Range
-        options[:min_length] = options[:length].min
-        options[:max_length] = options[:length].max
-        options.delete :length
-      end
-
-      if options[:length]
-        @length = options[:length]
-      elsif options[:max_length]
-        @min_length = options[:min_length] || 1
-        @max_length = options[:max_length]
-      else
-        raise ArgumentError, "#{self.class} requires :length or :max_length option"
-      end
-    end
-
-    protected
-
-    def generate_one
-      if @length
-        length = @length
-      else
-        length = rand_between(@min_length, @max_length)
-      end
-
-      (iterate(length) { rand_in(@chars) }).join
-    end
-
-    @min_length
-    @max_length
-    @length # exact length for all values
-    @chars # set of characters to choose from
-  end
-
-  class NumberGenerator < Generator
-    def initialize options = nil
-      options ||= {}
-      @max = options[:max]
-
-      unless @max
-        raise ArgumentError, "#{self.class} requires :max or :greater_than option"
-      end
-
-      if options[:greater_than]
-        table, column = *options[:greater_than]
-        @greater_than = { :table => table, :column => column }
-      else
-        @min = options[:min] || 0
-      end
-    end
-
-    protected
-
-    def generate_one
-      if @greater_than
-        current = Table.current(@greater_than[:table], @greater_than[:column]) || 0
-
-        # enforce min requirement, if present
-        if @min && @min > current
-          min = @min
-        else
-          min = current
-        end
-
-      else
-        min = @min
-      end
-
-      rand_between(min, @max)
-    end
-
-    @greater_than
-    @min
-    @max
-  end
-
   # for values selected from a set
   # including any column that "belongs_to" another column
   class EnumGenerator < Generator
@@ -240,9 +249,10 @@ module TestDataGenerator
       true
     end
 
-    def initialize set, options = {}
+    def initialize(set, unique: false, count: nil)
       @set = set
-      process_options options
+      @unique = unique
+      @count = count
     end
 
     protected
@@ -266,33 +276,15 @@ module TestDataGenerator
       end
     end
 
-    def process_options options
-      @unique = options[:unique]
-      @count = options[:count]
-    end
-
     private
     @set
     @indices
   end
 
-  class UrlGenerator < Generator
-    def initialize options = nil
-      @forgery = Forgery(:internet)
-    end
-
-    def generate_one
-      domain = @forgery.send :domain_name
-      'http://' + domain
-    end
-  end
-
   class BelongsToGenerator < EnumGenerator
-    def initialize table, column, options = nil
+    def initialize(table, column, options = nil)
       @table = table.to_sym
       @column = column.to_sym
-
-      process_options options
     end
 
     def each
@@ -306,18 +298,6 @@ module TestDataGenerator
     private
     @table
     @column
-  end
-
-  class DateTimeGenerator < NumberGenerator
-    MYSQL_FORMAT = 'Y-m-d H:M:S'
-
-    def initialize options = nil
-      options ||= {}
-      options[:max] ||= Time.now().to_i
-
-      super options
-    end
-
   end
 end
 
