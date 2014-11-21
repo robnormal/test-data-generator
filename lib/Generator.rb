@@ -179,8 +179,6 @@ module TestDataGenerator
   end
 
   class DateTimeGenerator < NumberGenerator
-    MYSQL_FORMAT = 'Y-m-d H:M:S'
-
     def initialize(options = {})
       options[:max] ||= Time.now().to_i
 

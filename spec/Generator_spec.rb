@@ -111,6 +111,24 @@ module TestDataGenerator
     end
   end
 
+  describe DateTimeGenerator do
+    it 'creates random timestamp, with NumberGenerator options' do
+      date = DateTimeGenerator.new(min: 100, max: 103)
+      date.take(10).each do |x|
+        expect(x).to be <= 103
+        expect(x).to be >= 100
+      end
+    end
+
+    it 'uses Time.now() as default for "max"' do
+      date = DateTimeGenerator.new
+      now = Time.now().to_i
+      date.take(10).each do |x|
+        expect(x).to be <= now
+      end
+    end
+  end
+
   describe UrlGenerator do
     it 'creates random, valid URLs' do
       require 'uri'
