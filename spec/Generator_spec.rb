@@ -94,5 +94,20 @@ module TestDataGenerator
       expect { uniq.take 4 }.to raise_error(RangeError)
     end
   end
+
+  describe EnumGenerator do
+    it 'selects random elements from a given enumerable' do
+      enum = EnumGenerator.new(['Alice', 'Bob', 'Eve'])
+      enum.take(10).each do |x|
+        expect(['Alice', 'Bob', 'Eve']).to include(x)
+      end
+    end
+
+    it 'produces unique elements if "unique" option is true' do
+      enum = EnumGenerator.new([1,1,1,2,3], unique: true)
+      expect(enum.take 3).to contain_exactly(1, 2, 3)
+    end
+  end
+
 end
 

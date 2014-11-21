@@ -250,28 +250,25 @@ module TestDataGenerator
       true
     end
 
-    def initialize(set, unique: false, count: nil)
-      @set = set
+    def initialize(set, unique: false)
+      @set = set.to_a
       @unique = unique
-      @count = count
     end
 
     protected
 
     def generate_one
       if @unique
-        # intialize @indices, if not initialized
-        if !@indices
-          all_indices = (0..@set.length-1).to_a
-          @indices = if @count then all_indices.sample(@count) else all_indices.shuffle end
+        # intialize @data, if not initialized
+        if !@data
+          @data = @set.uniq.shuffle
         end
 
-        if @indices.empty?
+        if @data.empty?
           raise(ArgumentError, "No more unique data")
         end
 
-        i = @indices.shift
-        @set[i]
+        @data.shift
       else
         @set.sample
       end
@@ -279,15 +276,17 @@ module TestDataGenerator
 
     private
     @set
-    @indices
+    @data
   end
 
+  # selects values from a column in a table
   class BelongsToGenerator < EnumGenerator
     def initialize(table, column, options = nil)
       @table = table.to_sym
       @column = column.to_sym
     end
 
+    # acquire data from Table only on first call to each()
     def each
       unless @set
         @set = Table.all(@table, @column)
