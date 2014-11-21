@@ -1,42 +1,25 @@
 require 'forgery'
 
-def hash_map h, &blk
+# maps a Hash to a Hash in the obvious way
+def hash_map(h, &blk)
   Hash[*(h.map &blk).flatten(1)]
 end
 
+# run the block n times, and return the output as an array
 def iterate n
   data = []
   n.times { data << yield }
   data
 end
 
-def rand_in *args
-  unless args.all? { |x| x }
-    raise ArgumentError, "nil is not an allowed argument to rand_in()"
-  end
+# choose random element from an Enumerable
+def rand_in xs
+  xs.to_a.sample
+end
 
-  case args.size
-  when 1
-    if args[0].is_a? Enumerable
-      args[0].to_a.sample
-    elsif args[0].is_a? Numeric
-      rand args[0]
-    else
-      raise ArgumentError, "Improper arguments for rand_in: #{args.to_s}"
-    end
-  when 2
-    if args.all? { |x| x.is_a? Numeric }
-      min = args[0]
-      max = args[1]
-
-      # min, max are _inclusive_
-      rand(max - min + 1) + min
-    else
-      rand (args[0]..args[1]).to_a
-    end
-  else
-    raise ArgumentError, "wrong number of (non-nil) arguments(#{args.size} for 1-2)"
-  end
+# random integer between min and max _inclusively_
+def rand_between(min, max)
+  rand(max - min + 1) + min
 end
 
 module TestDataGenerator
@@ -126,7 +109,7 @@ module TestDataGenerator
       if @count.is_a? Integer
         @count
       else
-        rand_in(@count)
+        rand(@count)
       end
     end
 
@@ -172,10 +155,10 @@ module TestDataGenerator
       if @length
         length = @length
       else
-        length = rand_in @min_length, @max_length
+        length = rand_between(@min_length, @max_length)
       end
 
-      (iterate(length) { rand_in @chars }).join
+      (iterate(length) { rand_in(@chars) }).join
     end
 
     @min_length
@@ -218,7 +201,7 @@ module TestDataGenerator
         min = @min
       end
 
-      rand_in min, @max
+      rand_between(min, @max)
     end
 
     @greater_than
