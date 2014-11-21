@@ -79,12 +79,18 @@ describe "Generator" do
     end
   end
 
-  describe TestDataGenerator::Generator do
-    it 'produces unique values if "unique" option is true' do
-      str = TestDataGenerator::StringGenerator.new(chars: 'a'..'c', max_length: 1, unique: true)
-      expect(str.take 3).to contain_exactly('a', 'b', 'c')
+  describe TestDataGenerator::UniqueGenerator do
+    it 'produces unique values from a given generator' do
+      str = TestDataGenerator::StringGenerator.new(chars: 'a'..'c', max_length: 1)
+      uniq = TestDataGenerator::UniqueGenerator.new(str)
+      expect(uniq.take 3).to contain_exactly('a', 'b', 'c')
+    end
+
+    it 'raises RangeError if more data is produced than the limit set by "max" option' do
+      str = TestDataGenerator::StringGenerator.new(chars: 'a'..'c', max_length: 1)
+      uniq = TestDataGenerator::UniqueGenerator.new(str, max: 3)
+      expect { uniq.take 4 }.to raise_error(RangeError)
     end
   end
-
 end
 

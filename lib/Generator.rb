@@ -23,56 +23,82 @@ def rand_between(min, max)
 end
 
 module TestDataGenerator
+  # every subclass must define:
+  # generate_one()
   class Generator
     include Enumerable
 
     def each
       loop do
-        if @null && rand < @null
-          yield nil
-        elsif @unique
-          begin
-            value = generate_one
-          end while @data_tracker[value]
-
-          @data_tracker[value] = true
-          yield value
-        else
-          yield generate_one
-        end
+        yield generate_one
       end
     end
 
-    # how often generator should return nil
-    def set_null percent
-      @null = percent
-    end
-
     protected
-
-    # if true, this generator never produces the same value twice
-    @unique
-
-    # probability of returning nil
-    @null
 
     def generate_one
       raise NotImplementedError, "Define #{self.class}::generate_one()"
     end
 
-    def process_options options
+    def process_options(options)
       options ||= {}
       options = hash_map(options) { |k, v| [k.to_sym, v] }
-
-      @unique = options && options[:unique]
-      if @unique
-        @data_tracker = {}
-      end
-
       options
+    end
+  end
+
+  # Decorator class
+  class UniqueGenerator < Generator
+    def initialize(gen, options = {})
+      @generator = gen
+      @max = options[:max]
+      @count = 0
+      @data_tracker = {}
+    end
+
+    protected
+
+    def generate_one
+      if @max && @count >= @max
+        raise(RangeError, "No more unique data; all #{@max} unique values have been used")
+      else
+        begin
+          value = @generator.take(1).first
+        end while @data_tracker[value]
+
+        @data_tracker[value] = true
+        @count += 1
+        value
+      end
     end
 
     private
+    @generator
+    @defer
+    @data_tracker
+    @max
+    @count
+  end
+
+  # Decorator class
+  class NullGenerator < Generator
+    def initialize(gen, null)
+      @generator = gen
+      @null = null
+    end
+
+    protected
+
+    def generate_one
+      if rand < @null
+        yield nil
+      else
+        yield @generator.generate_one
+      end
+    end
+
+    private
+    @generator
     @data_tracker
   end
 
@@ -217,12 +243,8 @@ module TestDataGenerator
       @set = set
     end
 
-    def each
-      if @unique
-        yield generate_one
-      else
-        super
-      end
+    def set_unique(bool)
+      @unique = bool
     end
 
     protected
