@@ -30,19 +30,15 @@ module TestDataGenerator
       loop do
         if @null && rand < @null
           yield nil
+        elsif @unique
+          begin
+            value = generate_one
+          end while @data_tracker[value]
+
+          @data_tracker[value] = true
+          yield value
         else
-
-          if @unique
-            begin
-              value = generate_one
-            end while @data_tracker[value]
-
-            @data_tracker[value] = true
-            yield value
-          else
-            yield generate_one
-          end
-
+          yield generate_one
         end
       end
     end
@@ -53,7 +49,11 @@ module TestDataGenerator
     end
 
     protected
+
+    # if true, this generator never produces the same value twice
     @unique
+
+    # probability of returning nil
     @null
 
     def generate_one
@@ -76,6 +76,7 @@ module TestDataGenerator
     @data_tracker
   end
 
+  # Generates data using the forgery library
   class ForgeryGenerator < Generator
     def initialize forgery_args, options = nil
       f_class = forgery_args[0].to_sym

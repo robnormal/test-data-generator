@@ -49,5 +49,42 @@ describe "Generator" do
     end
   end
 
+  describe TestDataGenerator::StringGenerator do
+    it 'produces strings of length <= "max_length" option, if any' do
+      str = TestDataGenerator::StringGenerator.new(max_length: 10)
+      str.take(10).each do |x|
+        expect(x.length).to be <= 10
+      end
+    end
+
+    it 'produces strings of length == "length" option, if any' do
+      str = TestDataGenerator::StringGenerator.new(length: 2)
+      str.take(10).each do |x|
+        expect(x.length).to eq(2)
+      end
+    end
+
+    it 'produces strings of length >= "min_length" option, if any' do
+      str = TestDataGenerator::StringGenerator.new(max_length: 5, min_length: 2)
+      str.take(10).each do |x|
+        expect(x.length).to be >= 2
+      end
+    end
+
+    it 'uses only characters found in "char" option, if any' do
+      str = TestDataGenerator::StringGenerator.new(max_length: 5, chars: ['a', 'b'])
+      str.take(10).each do |x|
+        expect(x).to match(/^[ab]+$/)
+      end
+    end
+  end
+
+  describe TestDataGenerator::Generator do
+    it 'produces unique values if "unique" option is true' do
+      str = TestDataGenerator::StringGenerator.new(chars: 'a'..'c', max_length: 1, unique: true)
+      expect(str.take 3).to contain_exactly('a', 'b', 'c')
+    end
+  end
+
 end
 

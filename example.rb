@@ -1,5 +1,5 @@
-require(File.dirname(__FILE__) + '/Table.rb')
-require(File.dirname(__FILE__) + '/Column.rb')
+require_relative('Table.rb')
+require_relative('Column.rb')
 
 a = TestDataGenerator::Table.new 'authors', 3, [
   [:id],
