@@ -111,6 +111,17 @@ module TestDataGenerator
     end
   end
 
+  describe UrlGenerator do
+    it 'creates random, valid URLs' do
+      require 'uri'
+
+      url = UrlGenerator.new
+      url.take(10).each do |x|
+        expect(x).to match(/\A#{URI::regexp(['http', 'https'])}\z/)
+      end
+    end
+  end
+
   describe UniqueGenerator do
     it 'produces unique values from a given generator' do
       str = StringGenerator.new(chars: 'a'..'c', max_length: 1)
