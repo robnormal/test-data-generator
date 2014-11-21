@@ -279,6 +279,8 @@ module TestDataGenerator
 
   # selects values from a column in a table
   class BelongsToGenerator < EnumGenerator
+    attr_reader :table, :column
+
     def initialize(table, column, options = nil)
       @table = table.to_sym
       @column = column.to_sym
@@ -292,10 +294,6 @@ module TestDataGenerator
 
       super
     end
-
-    private
-    @table
-    @column
   end
 end
 

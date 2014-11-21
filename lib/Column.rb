@@ -52,6 +52,66 @@ module TestDataGenerator
       end
     end
 
+    def self.from_spec(table, name, type, *args)
+      # name-based type magic
+      case name
+      when :id
+        type = :id
+      when /_at$/
+        type = :datetime
+      end
+
+      case type
+      when :string
+        generator = StringGenerator.new(*args)
+      when :number
+        generator = NumberGenerator.new(*args)
+      when :datetime
+        generator = DateTimeGenerator.new(*args)
+      when :forgery
+        generator = ForgeryGenerator.new(*args)
+      when :words
+        generator = WordGenerator.new(*args)
+      when :url
+        generator = UrlGenerator.new(*args)
+      when :bool, :boolean
+        generator = NumberGenerator.new(min: 0, max: 1)
+      when :enum
+        generator = EnumGenerator.new(enum_options(table.num_rows, args.last))
+      when :id
+        # id should be unique integer
+        args << :unique
+        generator = NumberGenerator.new(min: 1, max: 2147483647)
+      when :belongs_to
+        foreign_table  = args[0][0].to_sym
+        foreign_column = args[0][1].to_sym
+        options        = enum_options(table.num_rows, args[1])
+
+        generator = BelongsToGenerator.new(
+          foreign_table, foreign_column, options
+        )
+      else
+        raise ArgumentError, "Unknown generator type: #{type}"
+      end
+
+      if args.include?(:unique) and !generator.handles_unique?
+        generator = UniqueGenerator.new(generator)
+      end
+
+      # null must come after unique, since NULL is not a "unique" value
+      if args.include?(:null)
+        generator = NullGenerator.new(generator)
+      end
+
+      optional_args = if args.last.is_a?(Hash) then args.last else {} end
+
+      if type == :belongs_to
+        ForeignColumn.new(table, name.to_sym, generator, optional_args)
+      else
+        Column.new(table, name.to_sym, generator, optional_args)
+      end
+    end
+
     private
     @table
     @name
@@ -84,6 +144,25 @@ module TestDataGenerator
       @being_selected_from
     end
 
+    def self.enum_options(num_rows, options)
+      options ||= {}
+
+      if options[:unique]
+        options[:max] = num_rows
+      end
+
+      options
+    end
+  end
+
+  class ForeignColumn < Column
+    attr_reader :foreign_table, :foreign_column
+
+    def initialize(table, name, generator, options = {})
+      super
+      @foreign_table = generator.table
+      @foreign_column = generator.column
+    end
   end
 end
 

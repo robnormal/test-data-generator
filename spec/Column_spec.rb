@@ -16,8 +16,7 @@ module TestDataGenerator
 
     describe 'generate_one' do
       it 'uses given generator to produce one datum' do
-        expect(num.generate_one).to be >= 18
-        expect(num.generate_one).to be <= 100
+        expect(num.generate_one).to be_between(18, 100)
       end
     end
 

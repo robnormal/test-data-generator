@@ -43,8 +43,8 @@ describe "Generator" do
 
   describe :rand_between do
     it 'returns a random integer between a and b inclusively' do
-      expect(rand_between(0, 10)).to be_between(0, 10).inclusive
-      expect(rand_between(0, 1)).to be_between(0, 1).inclusive
+      expect(rand_between(0, 10)).to be_between(0, 10)
+      expect(rand_between(0, 1)).to be_between(0, 1)
       expect(rand_between(1, 1)).to eq(1)
     end
   end
@@ -115,8 +115,7 @@ module TestDataGenerator
     it 'creates random timestamp, with NumberGenerator options' do
       date = DateTimeGenerator.new(min: 100, max: 103)
       date.take(10).each do |x|
-        expect(x).to be <= 103
-        expect(x).to be >= 100
+        expect(x).to be_between(100, 103)
       end
     end
 
