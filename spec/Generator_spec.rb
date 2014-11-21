@@ -139,6 +139,16 @@ module TestDataGenerator
     end
   end
 
+  describe ForgeryGenerator do
+    describe :initialize do
+      it 'uses the first argument as the arguments to Forgery' do
+        forge = ForgeryGenerator.new([:email, :address])
+        # crude email regex
+        expect(forge.first).to match(/^[^@]+@[^@.]+\.[^@]+$/)
+      end
+    end
+  end
+
   describe EnumGenerator do
     it 'selects random elements from a given enumerable' do
       enum = EnumGenerator.new(['Alice', 'Bob', 'Eve'])
