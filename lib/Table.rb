@@ -58,7 +58,8 @@ module TestDataGenerator
       when :datetime
         generator = DateTimeGenerator.new  *args
       when :id
-        generator = NumberGenerator.new    :unique => true, :min => 1, :max => 2147483647
+        num = NumberGenerator.new          :min => 1, :max => 2147483647
+        generator = UniqueGenerator.new(num)
       when :bool, :boolean
         generator = NumberGenerator.new    :min => 0, :max => 1
       when :url
@@ -67,10 +68,18 @@ module TestDataGenerator
         raise ArgumentError, "Unknown generator type: #{type}"
       end
 
-      last_arg = args.last
-      optional_args = if last_arg.is_a? Hash then last_arg else nil end
+      if args.include?(:unique) and !generator.handles_unique?
+        generator = UniqueGenerator.new generator
+      end
 
-      @columns[column_name.to_sym] = Column.new self, column_name.to_sym, generator, optional_args
+      if args.include?(:null)
+        generator = NullGenerator.new generator
+      end
+
+      last_arg = args.last
+      optional_args = if last_arg.is_a?(Hash) then last_arg else nil end
+
+      @columns[column_name.to_sym] = Column.new(self, column_name.to_sym, generator, optional_args)
     end
 
     def column column_name
@@ -128,7 +137,7 @@ module TestDataGenerator
       options ||= {}
 
       if options[:unique]
-        options[:count] = @num_rows
+        options[:max] = @num_rows
       end
 
       options

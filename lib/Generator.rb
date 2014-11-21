@@ -34,17 +34,16 @@ module TestDataGenerator
       end
     end
 
+    def handles_unique?
+      false
+    end
+
     protected
 
     def generate_one
       raise NotImplementedError, "Define #{self.class}::generate_one()"
     end
 
-    def process_options(options)
-      options ||= {}
-      options = hash_map(options) { |k, v| [k.to_sym, v] }
-      options
-    end
   end
 
   # Decorator class
@@ -104,7 +103,7 @@ module TestDataGenerator
 
   # Generates data using the forgery library
   class ForgeryGenerator < Generator
-    def initialize forgery_args, options = nil
+    def initialize(forgery_args, options = {})
       f_class = forgery_args[0].to_sym
       f_method = forgery_args[1].to_sym
       f_args = forgery_args[2, -1]
@@ -113,7 +112,6 @@ module TestDataGenerator
       @forgery_method = f_method
       @forgery_args = f_args || []
 
-      process_options options
     end
 
     protected
@@ -156,7 +154,6 @@ module TestDataGenerator
 
     def initialize options = nil
       options ||= {}
-      options = process_options options
 
       @chars = options[:chars] || WORD_CHARS
 
@@ -239,44 +236,44 @@ module TestDataGenerator
   # for values selected from a set
   # including any column that "belongs_to" another column
   class EnumGenerator < Generator
-    def initialize set, options = nil
-      @set = set
+    def handles_unique?
+      true
     end
 
-    def set_unique(bool)
-      @unique = bool
+    def initialize set, options = {}
+      @set = set
+      process_options options
     end
 
     protected
 
     def generate_one
       if @unique
-        if !@data
-          @data = @set.sample(@count)
+        # intialize @indices, if not initialized
+        if !@indices
+          all_indices = (0..@set.length-1).to_a
+          @indices = if @count then all_indices.sample(@count) else all_indices.shuffle end
         end
 
-        if @data.empty?
-          raise ArgumentError, "Ran out of data: #{@table.name}.#{@name}"
+        if @indices.empty?
+          raise(ArgumentError, "No more unique data")
         end
 
-        @data.shift
+        i = @indices.shift
+        @set[i]
       else
         @set.sample
       end
     end
 
     def process_options options
-      options = super
-
-      if options && options[:count]
-        @count = options[:count]
-      elsif @unique
-        raise ArgumentError, 'Unique EnumGenerator requires a :count option - the total number of values expected'
-      end
+      @unique = options[:unique]
+      @count = options[:count]
     end
 
     private
     @set
+    @indices
   end
 
   class UrlGenerator < Generator
