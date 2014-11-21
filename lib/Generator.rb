@@ -127,7 +127,7 @@ module TestDataGenerator
   end
 
   class NumberGenerator < Generator
-    def initialize(max: nil, greater_than: nil, min: 0)
+    def initialize(max: nil, min: 0, greater_than: nil)
       if max
         @max = max
       else
@@ -138,7 +138,7 @@ module TestDataGenerator
         table, column = *greater_than
         @greater_than = { table: table, column: column }
       else
-        @min = min || 0
+        @min = min
       end
     end
 

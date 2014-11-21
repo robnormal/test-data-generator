@@ -81,6 +81,36 @@ module TestDataGenerator
     end
   end
 
+  describe NumberGenerator do
+    it 'produces integers <= "max" option' do
+      num = NumberGenerator.new(max: 2)
+      num.take(10).each do |x|
+        expect(x).to be <= 2
+      end
+    end
+
+    it 'raises ArgumentError if no "max" is given' do
+      expect { NumberGenerator.new }.to raise_error(ArgumentError)
+    end
+
+    it 'produces integers >= "min" option, if any' do
+      num = NumberGenerator.new(min: 3, max: 4)
+      num.take(10).each do |x|
+        expect(x).to be >= 3
+      end
+    end
+
+    it 'produces integers >= 0, if no "min" given' do
+      num = NumberGenerator.new(max: 2)
+      num.take(10).each do |x|
+        expect(x).to be >= 0
+      end
+    end
+
+    it 'TOTEST: produces integers > value in column given by "greater_than" option' do
+    end
+  end
+
   describe UniqueGenerator do
     it 'produces unique values from a given generator' do
       str = StringGenerator.new(chars: 'a'..'c', max_length: 1)
