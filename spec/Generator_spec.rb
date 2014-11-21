@@ -139,20 +139,6 @@ module TestDataGenerator
     end
   end
 
-  describe UniqueGenerator do
-    it 'produces unique values from a given generator' do
-      str = StringGenerator.new(chars: 'a'..'c', max_length: 1)
-      uniq = UniqueGenerator.new(str)
-      expect(uniq.take 3).to contain_exactly('a', 'b', 'c')
-    end
-
-    it 'raises RangeError if more data is produced than the limit set by "max" option' do
-      str = StringGenerator.new(chars: 'a'..'c', max_length: 1)
-      uniq = UniqueGenerator.new(str, max: 3)
-      expect { uniq.take 4 }.to raise_error(RangeError)
-    end
-  end
-
   describe EnumGenerator do
     it 'selects random elements from a given enumerable' do
       enum = EnumGenerator.new(['Alice', 'Bob', 'Eve'])
@@ -164,6 +150,49 @@ module TestDataGenerator
     it 'produces unique elements if "unique" option is true' do
       enum = EnumGenerator.new([1,1,1,2,3], unique: true)
       expect(enum.take 3).to contain_exactly(1, 2, 3)
+    end
+  end
+
+  describe UniqueGenerator do
+    it 'produces unique values from a given generator' do
+      str = StringGenerator.new(chars: 'a'..'c', max_length: 1)
+      uniq = UniqueGenerator.new(str)
+      expect(uniq.take 3).to contain_exactly('a', 'b', 'c')
+    end
+
+    it 'raises IndexError if more data is produced than the limit set by "max" option' do
+      str = StringGenerator.new(chars: 'a'..'c', max_length: 1)
+      uniq = UniqueGenerator.new(str, max: 3)
+      expect { uniq.take 4 }.to raise_error(IndexError)
+    end
+  end
+
+  describe NullGenerator do
+    it 'produces null with the given probability' do
+      num = NumberGenerator.new(max: 100)
+      null = NullGenerator.new(num, 0.5)
+
+      # test that nil is eventually produced
+      tries = 0
+      while tries < 100000
+        if null.first.nil?
+          break
+        end
+        tries += 1
+      end
+
+      expect(tries).to be < 100000
+
+      # test that something *other than* nil is eventually produced
+      tries = 0
+      while tries < 100000
+        unless null.first.nil?
+          break
+        end
+        tries += 1
+      end
+
+      expect(tries).to be < 100000
     end
   end
 

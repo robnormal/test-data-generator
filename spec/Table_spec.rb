@@ -37,32 +37,36 @@ module TestDataGenerator
       end
     end
 
+    def test_row(row)
+      expect(row.length).to eq(2)
+
+      age, tries = *row
+      expect(age).to be_between(18, 100)
+      expect(tries).to be_between(0, 10)
+    end
+
     describe 'row' do
       it 'generates a full row' do
+        dummy.clear
         10.times do
-          row = dummy.row
-          expect(row.length).to eq(2)
-
-          age, tries = *row
-          expect(age).to be_between(18, 100)
-          expect(tries).to be_between(0, 10)
+          test_row dummy.row
         end
       end
     end
 
     describe 'each' do
       it 'iterates over all rows, producing as needed' do
-        10.times do
-          row = dummy.row
-          expect(row.length).to eq(2)
-          expect(row[0]).to be >= 18
-          expect(row[0]).to be <= 100
-          expect(row[1]).to be >= 0
-          expect(row[1]).to be <= 10
+        dummy.clear
+        count = 0
+
+        dummy.each do |row|
+          test_row row
+          count += 1
         end
+
+        expect(count).to eq(10)
       end
     end
-    
   end
 end
 

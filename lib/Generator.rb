@@ -199,7 +199,7 @@ module TestDataGenerator
 
     def generate_one
       if @max && @count >= @max
-        raise(RangeError, "No more unique data; all #{@max} unique values have been used")
+        raise(IndexError, "No more unique data; all #{@max} unique values have been used")
       else
         begin
           value = @generator.first
@@ -221,6 +221,7 @@ module TestDataGenerator
 
   # Decorator class
   class NullGenerator < Generator
+    # null: probability of producing a null value
     def initialize(gen, null)
       @generator = gen
       @null = null
@@ -230,9 +231,9 @@ module TestDataGenerator
 
     def generate_one
       if rand < @null
-        yield nil
+        nil
       else
-        yield @generator.generate_one
+        @generator.first
       end
     end
 

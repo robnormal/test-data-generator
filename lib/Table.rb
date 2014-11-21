@@ -49,6 +49,10 @@ module TestDataGenerator
     end
 
     def row
+      if @rows_produced >= @num_rows
+        raise(IndexError, 'No more rows available')
+      end
+
       @rows_produced += 1
       @columns.values.map &:current
     end
@@ -57,6 +61,12 @@ module TestDataGenerator
       @num_rows.times { yield row }
     end
 
+    # reset @rows_produced count
+    def clear
+      @rows_produced = 0
+    end
+
+    # only use for cached columns
     def all(column_name)
       @columns[column_name].all
     end
