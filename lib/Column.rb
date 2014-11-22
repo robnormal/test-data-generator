@@ -74,8 +74,7 @@ module TestDataGenerator
       when :datetime
         generator = DateTimeGenerator.new(*args)
       when :forgery
-        # don't splat the args
-        generator = ForgeryGenerator.new(args)
+        generator = ForgeryGenerator.new(*args)
       when :words
         generator = WordGenerator.new(*args)
       when :url

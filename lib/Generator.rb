@@ -1,6 +1,7 @@
 require 'forgery'
 
 # choose random element from an Enumerable
+require 'forgery'
 def rand_in(xs)
   xs.to_a.sample
 end
@@ -31,15 +32,14 @@ module TestDataGenerator
     def generate_one
       raise NotImplementedError, "Define #{self.class}::generate_one()"
     end
-
   end
 
   # Generates data using the forgery library
   class ForgeryGenerator < Generator
-    def initialize(forgery_args, options = {})
-      @forgery        = Forgery(forgery_args[0].to_sym)
-      @forgery_method = forgery_args[1].to_sym
-      @forgery_args   = forgery_args[2, -1] || []
+    def initialize(forger, method_name, args = [])
+      @forgery        = Forgery(forger.to_sym)
+      @forgery_method = method_name.to_sym
+      @forgery_args   = args
     end
 
     protected
@@ -56,8 +56,8 @@ module TestDataGenerator
   class WordGenerator < ForgeryGenerator
     # [count] number of words per phrase; can be Integer, Array, or Range.
     #         If Array or Range, number of words is randomly selected for each phrase
-    def initialize(count, options = {})
-      super([:lorem_ipsum, :words], options)
+    def initialize(count)
+      super(:lorem_ipsum, :words)
       @count = count
     end
 
