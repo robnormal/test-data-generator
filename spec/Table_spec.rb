@@ -67,6 +67,32 @@ module TestDataGenerator
         expect(count).to eq(10)
       end
     end
+
+    describe :initialize do
+      it 'accepts an array of column specs as the third argument' do
+        users = TestDataGenerator::Table.new 'users', 3, [
+          [:id],
+          [:name, :forgery, [:name, :first_name]],
+          [:title, :words, 2..4],
+          [:created_at]
+        ]
+
+        row = users.row
+        id, name, title, created_at = *row
+
+        expect(id).to be_a(Fixnum)
+        expect(name).to be_a(String)
+        expect(title).to be_a(String)
+        expect(created_at).to be_a(Fixnum)
+      end
+    end
+
+    describe 'Table.table' do
+      it 'gets table by name' do
+        expect(Table.table(:dummy)).to eq(dummy)
+      end
+    end
+
   end
 end
 

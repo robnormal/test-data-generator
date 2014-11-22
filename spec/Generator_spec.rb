@@ -143,6 +143,7 @@ module TestDataGenerator
     describe :initialize do
       it 'uses the first argument as the arguments to Forgery' do
         forge = ForgeryGenerator.new([:email, :address])
+
         # crude email regex
         expect(forge.first).to match(/^[^@]+@[^@.]+\.[^@]+$/)
       end
@@ -160,6 +161,7 @@ module TestDataGenerator
     it 'produces unique elements if "unique" option is true' do
       enum = EnumGenerator.new([1,1,1,2,3], unique: true)
       expect(enum.take 3).to contain_exactly(1, 2, 3)
+      expect { enum.take 4 }.to raise_error(IndexError)
     end
   end
 

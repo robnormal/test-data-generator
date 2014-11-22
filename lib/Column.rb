@@ -94,7 +94,7 @@ module TestDataGenerator
         raise ArgumentError, "Unknown generator type: #{type}"
       end
 
-      if args.include?(:unique) and !generator.handles_unique?
+      if args.include?(:unique) && !generator.handles_unique?
         generator = UniqueGenerator.new(generator)
       end
 
@@ -158,6 +158,7 @@ module TestDataGenerator
   class ForeignColumn < Column
     attr_reader :foreign_table, :foreign_column
 
+    # generator must be a BelongsToGenerator
     def initialize(table, name, generator, options = {})
       super
       @foreign_table = generator.table

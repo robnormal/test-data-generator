@@ -264,7 +264,7 @@ module TestDataGenerator
         end
 
         if @data.empty?
-          raise(ArgumentError, "No more unique data")
+          raise(IndexError, "No more unique data")
         end
 
         @data.shift
@@ -282,13 +282,14 @@ module TestDataGenerator
   class BelongsToGenerator < EnumGenerator
     attr_reader :table, :column
 
-    def initialize(table, column, options = nil)
+    def initialize(table, column, unique: false)
       @table = table.to_sym
       @column = column.to_sym
+      @unique = unique
     end
 
-    # acquire data from Table only on first call to each()
-    def each
+    # wait until we need data before asking Table to generate it
+    def generate_one
       unless @set
         @set = Table.all(@table, @column)
       end
