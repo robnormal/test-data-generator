@@ -2,25 +2,6 @@ require "rspec"
 require_relative "../lib/Generator.rb"
 
 describe "Generator" do
-  describe :hash_map do
-    it 'maps a Hash to a Hash' do
-      words = { first: 'apple', second: 'bob', third: '' }
-      lengths = hash_map(words) { |key, val|
-        [val, val.length]
-      }
-
-      expect(lengths['apple']).to eq(5)
-    end
-  end
-
-  describe :iterate do
-    it 'runs a block n times, and returns outputs in an array' do
-      letters = %w{a b c}
-      popped = iterate(3) { letters.pop() }
-      expect(popped).to match_array(%w{c b a})
-    end
-  end
-
   describe :rand_in do
     it 'returns a random element in an Enumerable' do
       class DummyEnumerable

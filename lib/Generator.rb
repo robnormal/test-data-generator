@@ -1,17 +1,5 @@
 require 'forgery'
 
-# maps a Hash to a Hash in the obvious way
-def hash_map(h, &blk)
-  Hash[*(h.map &blk).flatten(1)]
-end
-
-# run the block n times, and return the output as an array
-def iterate(n)
-  data = []
-  n.times { data << yield }
-  data
-end
-
 # choose random element from an Enumerable
 def rand_in(xs)
   xs.to_a.sample
@@ -126,7 +114,7 @@ module TestDataGenerator
     def generate_one
       length = @length || rand_between(@min_length, @max_length)
 
-      (iterate(length) { rand_in @chars }).join
+      (length.times.collect { rand_in @chars }).join
     end
 
     @min_length
