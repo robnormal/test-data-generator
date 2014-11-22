@@ -282,10 +282,10 @@ module TestDataGenerator
   class BelongsToGenerator < EnumGenerator
     attr_reader :table, :column
 
-    def initialize(table, column, unique: false)
+    def initialize(table, column, options = {})
       @table = table.to_sym
       @column = column.to_sym
-      @unique = unique
+      @unique = options[:unique]
     end
 
     # wait until we need data before asking Table to generate it

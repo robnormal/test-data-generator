@@ -77,7 +77,7 @@ module TestDataGenerator
       when :bool, :boolean
         generator = NumberGenerator.new(min: 0, max: 1)
       when :enum
-        generator = EnumGenerator.new(enum_options(table.num_rows, args.last))
+        generator = EnumGenerator.new(args.last)
       when :id
         # id should be unique integer
         args << :unique
@@ -85,11 +85,9 @@ module TestDataGenerator
       when :belongs_to
         foreign_table  = args[0][0].to_sym
         foreign_column = args[0][1].to_sym
-        options        = enum_options(table.num_rows, args[1])
+        options        = args[1] || {}
 
-        generator = BelongsToGenerator.new(
-          foreign_table, foreign_column, options
-        )
+        generator = BelongsToGenerator.new(foreign_table, foreign_column, options)
       else
         raise ArgumentError, "Unknown generator type: #{type}"
       end
@@ -142,16 +140,6 @@ module TestDataGenerator
       end
 
       @being_selected_from
-    end
-
-    def self.enum_options(num_rows, options)
-      options ||= {}
-
-      if options[:unique]
-        options[:max] = num_rows
-      end
-
-      options
     end
   end
 
