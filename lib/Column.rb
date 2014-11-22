@@ -90,8 +90,8 @@ module TestDataGenerator
         options[:unique] = true
         generator = NumberGenerator.new(min: 1, max: 2147483647)
       when :belongs_to
-        foreign_table  = args[0][0].to_sym
-        foreign_column = args[0][1].to_sym
+        foreign_table  = args[0].to_sym
+        foreign_column = args[1].to_sym
 
         generator = BelongsToGenerator.new(
           foreign_table, foreign_column, { unique: options[:unique] }

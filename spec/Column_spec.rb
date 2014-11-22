@@ -59,6 +59,20 @@ module TestDataGenerator
         end
       end
 
+      describe 'when type is :belongs_to' do
+        it 'creates ForeignColumn with BelongsToGenerator pointing to given column' do
+          target = Table.new('target', 10, [:id])
+          source = Table.new('source', 10)
+
+          col = Column.from_spec(source, :foreign, :belongs_to, [:target, :id])
+          source.add col
+
+          id = col.generate_one
+          ids = target.to_a.map(&:first)
+          expect(ids).to include(id)
+        end
+      end
+
       describe 'when "unique" option is true' do
         it 'produces a UniqueGenerator' do
           col = Column.from_spec(table, :surname, :number, [min: 1, max: 10], unique: true)

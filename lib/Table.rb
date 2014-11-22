@@ -8,7 +8,7 @@ module TestDataGenerator
 
     attr_reader :name, :rows_produced, :num_rows
 
-    def initialize(name, num_rows, col_config = {})
+    def initialize(name, num_rows, col_config = [])
       @name          = name.to_sym
       @num_rows      = num_rows
       @rows_produced = 0
@@ -18,11 +18,9 @@ module TestDataGenerator
       @@tables[@name] = self
 
       col_config.each do |cfg|
-        col_name = cfg.shift
-        type     = cfg.shift
-        args     = cfg
+        col_name, type, args, options = *cfg
 
-        add_from_spec(col_name, type, *args)
+        add_from_spec(col_name, type, args || [], options || {})
       end
     end
 
@@ -36,8 +34,8 @@ module TestDataGenerator
     end
 
     # add a Column using Column.from_spec
-    def add_from_spec(column_name, type, *args)
-      add Column.from_spec(self, column_name, type, *args)
+    def add_from_spec(column_name, type, args = [], options = {})
+      add Column.from_spec(self, column_name, type, args, options)
     end
 
     def column(column_name)
