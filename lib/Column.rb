@@ -6,23 +6,22 @@ module TestDataGenerator
   class Column
     attr_reader :name, :table
 
-    def initialize(table, name, generator, options = {})
+    # [table] Table this Column belongs to
+    # [name] name of this column
+    # [generator] Generator used by this Column
+    def initialize(table, name, generator)
       if generator.is_a? Generator
-        if options[:null]
-          @generator = NullGenerator.new generator
-        else
-          @generator = generator
-        end
+        @generator = generator
       else
         raise ArgumentError, "Argument 3 for Column.new must be a Generator"
       end
 
       @table   = table
       @name    = name.to_sym
-      @options = options
       @values_produced = 0
     end
 
+    # generates and returns a single value
     def generate_one
       if being_selected_from?
         @last = @data[@values_produced]
@@ -34,6 +33,7 @@ module TestDataGenerator
       @last
     end
 
+    # returns value for current Table row
     def current
       generate_one until @values_produced >= @table.rows_produced
 
@@ -52,6 +52,10 @@ module TestDataGenerator
       end
     end
 
+    # [table] Table this Column will belong to
+    # [name] name to give to the Column
+    # [type] Symbol designating Column type
+    # [args] Additional arguments, depending on type
     def self.from_spec(table, name, type, *args)
       # name-based type magic
       case name
@@ -101,12 +105,10 @@ module TestDataGenerator
         generator = NullGenerator.new(generator)
       end
 
-      optional_args = if args.last.is_a?(Hash) then args.last else {} end
-
       if type == :belongs_to
-        ForeignColumn.new(table, name.to_sym, generator, optional_args)
+        ForeignColumn.new(table, name.to_sym, generator)
       else
-        Column.new(table, name.to_sym, generator, optional_args)
+        Column.new(table, name.to_sym, generator)
       end
     end
 
@@ -143,11 +145,14 @@ module TestDataGenerator
     end
   end
 
+  # Represents a foreign key
   class ForeignColumn < Column
     attr_reader :foreign_table, :foreign_column
 
-    # generator must be a BelongsToGenerator
-    def initialize(table, name, generator, options = {})
+    # [table] Table this Column belongs to
+    # [name] name of this column
+    # [generator] Generator used by this Column; must be a BelongsToGenerator
+    def initialize(table, name, generator)
       super
       @foreign_table = generator.table
       @foreign_column = generator.column

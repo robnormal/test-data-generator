@@ -26,6 +26,7 @@ module TestDataGenerator
   class Generator
     include Enumerable
 
+    # Iterates over all generated data
     def each
       loop do
         yield generate_one
@@ -38,7 +39,7 @@ module TestDataGenerator
 
     protected
 
-    # every subclass must define
+    # Every subclass must define this
     def generate_one
       raise NotImplementedError, "Define #{self.class}::generate_one()"
     end
@@ -65,17 +66,11 @@ module TestDataGenerator
 
   # creates lorem ipsum verbiage
   class WordGenerator < ForgeryGenerator
+    # [count] number of words per phrase; can be Integer, Array, or Range.
+    #         If Array or Range, number of words is randomly selected for each phrase
     def initialize(count, options = {})
       super([:lorem_ipsum, :words], options)
       @count = count
-    end
-
-    def num_words
-      if @count.is_a? Integer
-        @count
-      else
-        rand(@count)
-      end
     end
 
     protected
@@ -85,7 +80,16 @@ module TestDataGenerator
     end
 
     private
+
     @count
+
+    def num_words
+      if @count.is_a? Integer
+        @count
+      else
+        rand_in(@count)
+      end
+    end
   end
 
   # random strings
@@ -93,6 +97,11 @@ module TestDataGenerator
     ALL_CHARS  = ('!'..'z').to_a
     WORD_CHARS = ('0'..'9').to_a + ('A'..'Z').to_a + ('a'..'z').to_a << '_'
 
+    # [chars] Set of characters from which to form String
+    # [length] If present, all Strings will be this long
+    # [max_length] If present, all Strings will be at most this long
+    # [min_length] All strings are at least this long
+    # Either length or max_length must be set
     def initialize(chars: WORD_CHARS, length: nil, min_length: 1, max_length: nil)
       @chars = chars
 
@@ -127,6 +136,9 @@ module TestDataGenerator
   end
 
   class NumberGenerator < Generator
+    # [max] maximum value
+    # [min] minimum value
+    # [greater_than] name of Column; must generate value > column's current() value
     def initialize(max: nil, min: 0, greater_than: nil)
       if max
         @max = max
@@ -172,6 +184,8 @@ module TestDataGenerator
       @forgery = Forgery(:internet)
     end
 
+    protected
+
     def generate_one
       domain = @forgery.send :domain_name
       'http://' + domain
@@ -186,8 +200,10 @@ module TestDataGenerator
     end
   end
 
-  # Decorator class
+  # Decorator class - returns unique values from base Generator
   class UniqueGenerator < Generator
+    # [gen] base Generator
+    # [max] maximum number of unique values available
     def initialize(gen, max: nil)
       @generator = gen
       @max = max
@@ -219,9 +235,10 @@ module TestDataGenerator
     @count
   end
 
-  # Decorator class
+  # Decorator class - returns base Generator values mixed with NULLs
   class NullGenerator < Generator
-    # null: probability of producing a null value
+    # [gen] base Generator
+    # [null] probability of producing a null value
     def initialize(gen, null)
       @generator = gen
       @null = null
@@ -287,6 +304,8 @@ module TestDataGenerator
       @column = column.to_sym
       @unique = options[:unique]
     end
+
+    protected
 
     # wait until we need data before asking Table to generate it
     def generate_one
