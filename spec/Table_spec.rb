@@ -25,7 +25,7 @@ module TestDataGenerator
 
     describe 'add_from_spec' do
       it 'adds a column via Column.from_spec()' do
-        dummy.add_from_spec(:tries, :number, max: 10)
+        dummy.add_from_spec(:tries, :number, [max: 10])
         expect(dummy.column(:tries).generate_one).to be_between(0, 10)
       end
     end
@@ -73,7 +73,7 @@ module TestDataGenerator
         users = TestDataGenerator::Table.new 'users', 3, [
           [:id],
           [:name, :forgery, [:name, :first_name]],
-          [:title, :words, 2..4],
+          [:title, :words, [2..4]],
           [:created_at]
         ]
 

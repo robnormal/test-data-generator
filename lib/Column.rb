@@ -56,7 +56,9 @@ module TestDataGenerator
     # [name] name to give to the Column
     # [type] Symbol designating Column type
     # [args] Additional arguments, depending on type
-    def self.from_spec(table, name, type, *args)
+    def self.from_spec(table, name, type = nil, args = [], options = {})
+      name = name.to_sym
+
       # name-based type magic
       case name
       when :id
@@ -73,7 +75,8 @@ module TestDataGenerator
       when :datetime
         generator = DateTimeGenerator.new(*args)
       when :forgery
-        generator = ForgeryGenerator.new(*args)
+        # don't splat the args
+        generator = ForgeryGenerator.new(args)
       when :words
         generator = WordGenerator.new(*args)
       when :url
@@ -81,28 +84,29 @@ module TestDataGenerator
       when :bool, :boolean
         generator = NumberGenerator.new(min: 0, max: 1)
       when :enum
-        generator = EnumGenerator.new(args.last)
+        generator = EnumGenerator.new(*args)
       when :id
         # id should be unique integer
-        args << :unique
+        options[:unique] = true
         generator = NumberGenerator.new(min: 1, max: 2147483647)
       when :belongs_to
         foreign_table  = args[0][0].to_sym
         foreign_column = args[0][1].to_sym
-        options        = args[1] || {}
 
-        generator = BelongsToGenerator.new(foreign_table, foreign_column, options)
+        generator = BelongsToGenerator.new(
+          foreign_table, foreign_column, { unique: options[:unique] }
+        )
       else
         raise ArgumentError, "Unknown generator type: #{type}"
       end
 
-      if args.include?(:unique) && !generator.handles_unique?
+      if options[:unique] && !generator.handles_unique?
         generator = UniqueGenerator.new(generator)
       end
 
       # null must come after unique, since NULL is not a "unique" value
-      if args.include?(:null)
-        generator = NullGenerator.new(generator)
+      if options[:null]
+        generator = NullGenerator.new(generator, options[:null])
       end
 
       if type == :belongs_to
