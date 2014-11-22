@@ -107,7 +107,15 @@ module TestDataGenerator
       end
     end
 
-    it 'TOTEST: produces integers > value in column given by "greater_than" option' do
+    it 'produces integers >= current value in "greater_than" column' do
+      table = Table.new('numgen', 10)
+      col = Column.new(table, 'num', NumberGenerator.new(max: 3))
+      table.add(col)
+
+      greater = NumberGenerator.new(max: 3, greater_than: [:numgen, :num])
+
+      n = col.generate_one
+      expect(greater.take(10).all? { |x| x <= 3 && x >= n }).to be true
     end
   end
 

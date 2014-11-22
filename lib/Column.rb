@@ -1,6 +1,5 @@
-require 'forgery'
-require(File.dirname(__FILE__) + '/Generator.rb')
-require(File.dirname(__FILE__) + '/Table.rb')
+require_relative('Generator.rb')
+require_relative('Table.rb')
 
 module TestDataGenerator
   class Column
