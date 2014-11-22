@@ -1,9 +1,0 @@
-Creating a test database is a tedious task - you must not only produce
-varied data, but you must also ensure that the data meets the constraints
-of your database. TestDataGenerator was created to solve this problem.
-TestDataGenerator is written in Ruby, and uses the 
-[forgery](https://github.com/sevenwire/forgery) gem for some data
-generation.
-
-TestDataGenerator is in early stages of development. 
-
