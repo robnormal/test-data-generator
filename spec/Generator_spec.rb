@@ -1,5 +1,6 @@
 require "rspec"
-require_relative "../lib/Generator.rb"
+require_relative "../lib/data_generators.rb"
+require_relative "../lib/Table.rb"
 
 describe "Generator" do
   describe :rand_in do
@@ -35,28 +36,28 @@ module TestDataGenerator
   describe StringGenerator do
     it 'produces strings of length <= "max_length" option, if any' do
       str = StringGenerator.new(max_length: 10)
-      str.take(10).each do |x|
+      str.iterate(10).each do |x|
         expect(x.length).to be <= 10
       end
     end
 
     it 'produces strings of length == "length" option, if any' do
       str = StringGenerator.new(length: 2)
-      str.take(10).each do |x|
+      str.iterate(10).each do |x|
         expect(x.length).to eq(2)
       end
     end
 
     it 'produces strings of length >= "min_length" option, if any' do
       str = StringGenerator.new(max_length: 5, min_length: 2)
-      str.take(10).each do |x|
+      str.iterate(10).each do |x|
         expect(x.length).to be >= 2
       end
     end
 
     it 'uses only characters found in "char" option, if any' do
       str = StringGenerator.new(max_length: 5, chars: ['a', 'b'])
-      str.take(10).each do |x|
+      str.iterate(10).each do |x|
         expect(x).to match(/^[ab]+$/)
       end
     end
@@ -65,7 +66,7 @@ module TestDataGenerator
   describe NumberGenerator do
     it 'produces integers <= "max" option' do
       num = NumberGenerator.new(max: 2)
-      num.take(10).each do |x|
+      num.iterate(10).each do |x|
         expect(x).to be <= 2
       end
     end
@@ -76,34 +77,32 @@ module TestDataGenerator
 
     it 'produces integers >= "min" option, if any' do
       num = NumberGenerator.new(min: 3, max: 4)
-      num.take(10).each do |x|
+      num.iterate(10).each do |x|
         expect(x).to be >= 3
       end
     end
 
     it 'produces integers >= 0, if no "min" given' do
       num = NumberGenerator.new(max: 2)
-      num.take(10).each do |x|
+      num.iterate(10).each do |x|
         expect(x).to be >= 0
       end
     end
 
-    it 'produces integers >= current value in "greater_than" column' do
-      table = Table.new('numgen', 10)
-      col = Column.new(table, 'num', NumberGenerator.new(max: 3))
-      table.add(col)
+    it 'produces integers >= current last value in "greater_than" list' do
+      val_list = [0]
+      greater = NumberGenerator.new(max: 3, greater_than: val_list)
 
-      greater = NumberGenerator.new(max: 3, greater_than: [:numgen, :num])
-
-      n = col.generate_one
-      expect(greater.take(10).all? { |x| x <= 3 && x >= n }).to be true
+      expect(greater.iterate(10).all? { |x| x >= 0 && x <= 3 }).to be true
+      val_list << 2
+      expect(greater.iterate(10).all? { |x| x >= 2 && x <= 3 }).to be true
     end
   end
 
   describe DateTimeGenerator do
     it 'creates random timestamp, with NumberGenerator options' do
       date = DateTimeGenerator.new(min: 100, max: 103)
-      date.take(10).each do |x|
+      date.iterate(10).each do |x|
         expect(x).to be_between(100, 103)
       end
     end
@@ -111,7 +110,7 @@ module TestDataGenerator
     it 'uses Time.now() as default for "max"' do
       date = DateTimeGenerator.new
       now = Time.now().to_i
-      date.take(10).each do |x|
+      date.iterate(10).each do |x|
         expect(x).to be <= now
       end
     end
@@ -122,7 +121,7 @@ module TestDataGenerator
       require 'uri'
 
       url = UrlGenerator.new
-      url.take(10).each do |x|
+      url.iterate(10).each do |x|
         expect(x).to match(/\A#{URI::regexp(['http', 'https'])}\z/)
       end
     end
@@ -134,7 +133,7 @@ module TestDataGenerator
         forge = ForgeryGenerator.new(:email, :address)
 
         # crude email regex
-        expect(forge.first).to match(/^[^@]+@[^@.]+\.[^@]+$/)
+        expect(forge.generate).to match(/^[^@]+@[^@.]+\.[^@]+$/)
       end
     end
   end
@@ -142,15 +141,15 @@ module TestDataGenerator
   describe EnumGenerator do
     it 'selects random elements from a given enumerable' do
       enum = EnumGenerator.new(['Alice', 'Bob', 'Eve'])
-      enum.take(10).each do |x|
+      enum.iterate(10).each do |x|
         expect(['Alice', 'Bob', 'Eve']).to include(x)
       end
     end
 
     it 'produces unique elements if "unique" option is true' do
       enum = EnumGenerator.new([1,1,1,2,3], unique: true)
-      expect(enum.take 3).to contain_exactly(1, 2, 3)
-      expect { enum.take 4 }.to raise_error(IndexError)
+      expect(enum.iterate 3).to contain_exactly(1, 2, 3)
+      expect { enum.iterate 4 }.to raise_error(IndexError)
     end
   end
 
@@ -158,13 +157,13 @@ module TestDataGenerator
     it 'produces unique values from a given generator' do
       str = StringGenerator.new(chars: 'a'..'c', max_length: 1)
       uniq = UniqueGenerator.new(str)
-      expect(uniq.take 3).to contain_exactly('a', 'b', 'c')
+      expect(uniq.iterate 3).to contain_exactly('a', 'b', 'c')
     end
 
     it 'raises IndexError if more data is produced than the limit set by "max" option' do
       str = StringGenerator.new(chars: 'a'..'c', max_length: 1)
       uniq = UniqueGenerator.new(str, max: 3)
-      expect { uniq.take 4 }.to raise_error(IndexError)
+      expect { uniq.iterate 4 }.to raise_error(IndexError)
     end
   end
 
@@ -176,7 +175,7 @@ module TestDataGenerator
       # test that nil is eventually produced
       tries = 0
       while tries < 100000
-        if null.first.nil?
+        if null.generate.nil?
           break
         end
         tries += 1
@@ -187,7 +186,7 @@ module TestDataGenerator
       # test that something *other than* nil is eventually produced
       tries = 0
       while tries < 100000
-        unless null.first.nil?
+        unless null.generate.nil?
           break
         end
         tries += 1
