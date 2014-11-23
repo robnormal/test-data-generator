@@ -4,7 +4,7 @@ require 'set'
 
 module TestDataGenerator
   describe Column do
-    table = Table.new('dummy', 10)
+    table = Table.new('dummy')
     num = Column.new('age', NumberGenerator.new(min: 18, max: 100))
 
     it 'has symbol attribute "name"' do

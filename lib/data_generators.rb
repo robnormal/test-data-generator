@@ -34,7 +34,7 @@ module TestDataGenerator
     end
 
     def generate
-      @forgery.send(@forgery_method, num_words, random: true)
+      @forger.send(@forger_method, num_words, random: true)
     end
 
     private
