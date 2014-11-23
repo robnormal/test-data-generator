@@ -12,12 +12,10 @@ module TestDataGenerator
     def initialize(name, generator)
       if generator.is_a? Generator
         @generator = generator
+        @name = name.to_sym
       else
         raise ArgumentError, "Argument 3 for Column.new must be a Generator"
       end
-
-      @name    = name.to_sym
-      @values_produced = 0
     end
 
     # generates and returns a single value
@@ -29,7 +27,7 @@ module TestDataGenerator
     # [name] name to give to the Column
     # [type] Symbol designating Column type
     # [args] Additional arguments, depending on type
-    def self.from_spec(table, name, type = nil, args = [], options = {})
+    def self.from_spec(name, type = nil, args = [], options = {})
       name = name.to_sym
 
       # name-based type magic
@@ -38,6 +36,15 @@ module TestDataGenerator
         type = :id
       when /_at$/
         type = :datetime
+      end
+
+      if type == :belongs_to
+        foreign_table  = args[0].to_sym
+        foreign_column = args[1].to_sym
+
+        return DependentColumnStub.new(
+          name.to_sym, BelongsToGenerator, [[foreign_table, foreign_column]]
+        )
       end
 
       case type
@@ -61,19 +68,12 @@ module TestDataGenerator
         # id should be unique integer
         options[:unique] = true
         generator = NumberGenerator.new(min: 1, max: 2147483647)
-      when :belongs_to
-        foreign_table  = args[0].to_sym
-        foreign_column = args[1].to_sym
-
-        generator = BelongsToGenerator.new(
-          foreign_table, foreign_column, { unique: options[:unique] }
-        )
       else
         raise ArgumentError, "Unknown generator type: #{type}"
       end
 
-      if options[:unique] && !generator.handles_unique?
-        generator = UniqueGenerator.new(generator)
+      if options[:unique]
+        generator = generator.to_unique
       end
 
       # null must come after unique, since NULL is not a "unique" value
@@ -81,11 +81,7 @@ module TestDataGenerator
         generator = NullGenerator.new(generator, options[:null])
       end
 
-      if type == :belongs_to
-        ForeignColumn.new(table, name.to_sym, generator)
-      else
-        Column.new(table, name.to_sym, generator)
-      end
+      Column.new(name.to_sym, generator)
     end
 
     private
@@ -102,7 +98,7 @@ module TestDataGenerator
   class DependentColumnStub
     attr_reader :name, :dependencies
 
-    def intialize(name, generator_type, column_names, generator_options = {})
+    def initialize(name, generator_type, column_names, generator_options = {})
       @name = name
       @gen = generator_type
       @dependencies = column_names

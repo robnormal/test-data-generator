@@ -17,22 +17,22 @@ module TestDataGenerator
       expect(dummy.rows_produced).to eq(0)
     end
 
-    age = Column.new(dummy, 'age', NumberGenerator.new(min: 18, max: 100))
+    age = Column.new('age', NumberGenerator.new(min: 18, max: 100))
     it '"add" adds a column, "column" retrieves one by name' do
-      dummy.add age
+      dummy.add! age
       expect(dummy.column(:age)).to eq(age)
     end
 
     describe 'add_from_spec' do
       it 'adds a column via Column.from_spec()' do
-        dummy.add_from_spec(:tries, :number, [max: 10])
-        expect(dummy.column(:tries).generate_one).to be_between(0, 10)
+        dummy.add_from_spec!(:tries, :number, [max: 10])
+        expect(dummy.column(:tries).generate).to be_between(0, 10)
       end
     end
 
     describe 'current' do
       it "returns column's most recently created value" do
-        my_age = dummy.column(:age).generate_one
+        my_age = dummy.column(:age).generate
         expect(dummy.current :age).to eq(my_age)
       end
     end

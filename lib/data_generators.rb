@@ -99,7 +99,7 @@ module TestDataGenerator
 
     # [max] maximum value
     # [min] minimum value
-    # [greater_than] name of Column; must generate value > column's current() value
+    # [greater_than] Column data in Database object
     def initialize(max: nil, min: 0, greater_than: nil)
       if max
         @max = max
@@ -108,8 +108,7 @@ module TestDataGenerator
       end
 
       if greater_than
-        table, column = *greater_than
-        @greater_than = { table: table, column: column }
+        @greater_than = greater_than
       else
         @min = min
       end
@@ -117,7 +116,7 @@ module TestDataGenerator
 
     def generate
       if @greater_than
-        current = Table.current(@greater_than[:table], @greater_than[:column]) || 0
+        current = @greater_than.last
 
         # enforce min requirement, if present
         if @min && @min > current
@@ -178,7 +177,7 @@ module TestDataGenerator
         raise(IndexError, "No more unique data; all #{@max} unique values have been used")
       else
         begin
-          value = @generator.first
+          value = @generator.generate
         end while @data_tracker[value]
 
         @data_tracker[value] = true
@@ -210,7 +209,7 @@ module TestDataGenerator
       if rand < @null
         nil
       else
-        @generator.first
+        @generator.generate
       end
     end
 
