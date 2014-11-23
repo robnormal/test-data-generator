@@ -1,64 +1,43 @@
 require 'forgery'
 require_relative 'util.rb'
+require_relative 'generator.rb'
 
 module TestDataGenerator
-  class Generator
-    include Enumerable
-
-    # Iterates over all generated data
-    def each
-      loop do
-        yield generate_one
-      end
-    end
-
-    def handles_unique?
-      false
-    end
-
-    protected
-
-    # Every subclass must define this
-    def generate_one
-      raise NotImplementedError, "Define #{self.class}::generate_one()"
-    end
-  end
-
   # Generates data using the forgery library
-  class ForgeryGenerator < Generator
-    def initialize(forger, method_name, args = [])
-      @forgery        = Forgery(forger.to_sym)
-      @forgery_method = method_name.to_sym
-      @forgery_args   = args
+  class ForgeryGenerator
+    include Generator
+
+    def initialize(forger, method, args = [])
+      @forger        = Forgery(forger.to_sym)
+      @forger_method = method.to_sym
+      @forger_args   = args
+    end
+
+    def generate
+      @forger.send(@forger_method, *@forger_args)
     end
 
     protected
-    @forgery
-    @forgery_method
-    @forgery_args
-
-    def generate_one
-      @forgery.send(@forgery_method, *@forgery_args)
-    end
+    @forger
+    @forger_method
+    @forger_args
   end
+
 
   # creates lorem ipsum verbiage
   class WordGenerator < ForgeryGenerator
-    # [count] number of words per phrase; can be Integer, Array, or Range.
-    #         If Array or Range, number of words is randomly selected for each phrase
+    # @param count [Fixnum] number of words per phrase; can be Integer, Array, or Range.
+    #   If Array or Range, number of words is randomly selected for each phrase
     def initialize(count)
       super(:lorem_ipsum, :words)
       @count = count
     end
 
-    protected
-
-    def generate_one
+    def generate
       @forgery.send(@forgery_method, num_words, random: true)
     end
 
     private
-
     @count
 
     def num_words
@@ -70,8 +49,11 @@ module TestDataGenerator
     end
   end
 
+
   # random strings
-  class StringGenerator < Generator
+  class StringGenerator
+    include Generator
+
     ALL_CHARS  = ('!'..'z').to_a
     WORD_CHARS = ('0'..'9').to_a + ('A'..'Z').to_a + ('a'..'z').to_a << '_'
 
@@ -99,21 +81,22 @@ module TestDataGenerator
       end
     end
 
-    protected
-
-    def generate_one
+    def generate
       length = @length || rand_between(@min_length, @max_length)
 
       (length.times.collect { rand_in @chars }).join
     end
 
+    private
     @min_length
     @max_length
     @length # exact length for all values
     @chars # set of characters to choose from
   end
 
-  class NumberGenerator < Generator
+  class NumberGenerator
+    include Generator
+
     # [max] maximum value
     # [min] minimum value
     # [greater_than] name of Column; must generate value > column's current() value
@@ -132,9 +115,7 @@ module TestDataGenerator
       end
     end
 
-    protected
-
-    def generate_one
+    def generate
       if @greater_than
         current = Table.current(@greater_than[:table], @greater_than[:column]) || 0
 
@@ -152,19 +133,20 @@ module TestDataGenerator
       rand_between(min, @max)
     end
 
+    private
     @greater_than
     @min
     @max
   end
 
-  class UrlGenerator < Generator
+  class UrlGenerator
+    include Generator
+
     def initialize(options = nil)
       @forgery = Forgery(:internet)
     end
 
-    protected
-
-    def generate_one
+    def generate
       domain = @forgery.send :domain_name
       'http://' + domain
     end
@@ -179,7 +161,9 @@ module TestDataGenerator
   end
 
   # Decorator class - returns unique values from base Generator
-  class UniqueGenerator < Generator
+  class UniqueGenerator
+    include Generator
+
     # [gen] base Generator
     # [max] maximum number of unique values available
     def initialize(gen, max: nil)
@@ -189,9 +173,7 @@ module TestDataGenerator
       @data_tracker = {}
     end
 
-    protected
-
-    def generate_one
+    def generate
       if @max && @count >= @max
         raise(IndexError, "No more unique data; all #{@max} unique values have been used")
       else
@@ -214,7 +196,9 @@ module TestDataGenerator
   end
 
   # Decorator class - returns base Generator values mixed with NULLs
-  class NullGenerator < Generator
+  class NullGenerator
+    include Generator
+
     # [gen] base Generator
     # [null] probability of producing a null value
     def initialize(gen, null)
@@ -222,9 +206,7 @@ module TestDataGenerator
       @null = null
     end
 
-    protected
-
-    def generate_one
+    def generate
       if rand < @null
         nil
       else
@@ -239,9 +221,11 @@ module TestDataGenerator
 
   # for values selected from a set
   # including any column that "belongs_to" another column
-  class EnumGenerator < Generator
-    def handles_unique?
-      true
+  class EnumGenerator
+    include Generator
+
+    def to_unique
+      EnumGenerator.new(@set, unique: true)
     end
 
     def initialize(set, unique: false)
@@ -249,9 +233,7 @@ module TestDataGenerator
       @unique = unique
     end
 
-    protected
-
-    def generate_one
+    def generate
       if @unique
         # intialize @data, if not initialized
         if !@data
@@ -274,24 +256,16 @@ module TestDataGenerator
   end
 
   # selects values from a column in a table
-  class BelongsToGenerator < EnumGenerator
-    attr_reader :table, :column
+  class BelongsToGenerator
+    include Generator
 
-    def initialize(table, column, options = {})
-      @table = table.to_sym
-      @column = column.to_sym
-      @unique = options[:unique]
+    # @param col_accum [Accumulator] Accumulator for Column this generator points to
+    def initialize(column_accum)
+      @col_accum = column_accum
     end
 
-    protected
-
-    # wait until we need data before asking Table to generate it
-    def generate_one
-      unless @set
-        @set = Table.all(@table, @column)
-      end
-
-      super
+    def generate
+      @col_accum.sample
     end
   end
 end

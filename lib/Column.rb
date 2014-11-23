@@ -1,54 +1,28 @@
-require_relative('Generator.rb')
+require_relative('data_generators.rb')
 require_relative('Table.rb')
 
 module TestDataGenerator
   class Column
-    attr_reader :name, :table
+    include Generator
 
-    # [table] Table this Column belongs to
+    attr_reader :name
+
     # [name] name of this column
     # [generator] Generator used by this Column
-    def initialize(table, name, generator)
+    def initialize(name, generator)
       if generator.is_a? Generator
         @generator = generator
       else
         raise ArgumentError, "Argument 3 for Column.new must be a Generator"
       end
 
-      @table   = table
       @name    = name.to_sym
       @values_produced = 0
     end
 
     # generates and returns a single value
-    def generate_one
-      if being_selected_from?
-        @last = @data[@values_produced]
-      else
-        @last = @generator.first
-      end
-
-      @values_produced += 1
-      @last
-    end
-
-    # returns value for current Table row
-    def current
-      generate_one until @values_produced >= @table.rows_produced
-
-      if being_selected_from?
-        @data[@table.rows_produced - 1]
-      else
-        @last
-      end
-    end
-
-    def all
-      if being_selected_from?
-        @data
-      else
-        raise "Column::all() called on uncached column #{@table.name}.#{@name}"
-      end
+    def generate
+      @generator.generate
     end
 
     # [table] Table this Column will belong to
@@ -117,47 +91,27 @@ module TestDataGenerator
     private
     @table
     @name
-    @values_produced
     @generator
     @options
-    @last
 
     @being_selected_from
     @data
-
-    def generate_all
-      count = @table.num_rows
-      data = @generator.take count
-      data
-    end
-
-    def being_selected_from?
-      # only run on first call
-      if @being_selected_from == nil
-        @being_selected_from = @table.need_all? self
-
-        if @being_selected_from
-          @data = generate_all
-          @data.freeze
-          @values_produced = 0
-        end
-      end
-
-      @being_selected_from
-    end
   end
 
-  # Represents a foreign key
-  class ForeignColumn < Column
-    attr_reader :foreign_table, :foreign_column
+  # Database object will turn this into
+  class DependentColumnStub
+    attr_reader :name, :dependencies
 
-    # [table] Table this Column belongs to
-    # [name] name of this column
-    # [generator] Generator used by this Column; must be a BelongsToGenerator
-    def initialize(table, name, generator)
-      super
-      @foreign_table = generator.table
-      @foreign_column = generator.column
+    def intialize(name, generator_type, column_names, generator_options = {})
+      @name = name
+      @gen = generator_type
+      @dependencies = column_names
+      @gen_options = generator_options
+    end
+
+    # @param accumulator [Accumulator] Accumulates column(s) this column depends on
+    def resolve(tables)
+      Column.new(@name, @type.new(accumulator, options))
     end
   end
 end
