@@ -1,36 +1,6 @@
 require "rspec"
-require_relative "../lib/data_generators.rb"
-require_relative "../lib/Table.rb"
-
-describe "Generator" do
-  describe :rand_in do
-    it 'returns a random element in an Enumerable' do
-      class DummyEnumerable
-        include Enumerable
-
-        def init
-        end
-
-        def each
-          %w{aaa a aaaaaa}.each { |x|
-            yield x.length
-          }
-        end
-      end
-
-      dummy = DummyEnumerable.new
-      expect([3, 1, 6]).to include(rand_in dummy)
-    end
-  end
-
-  describe :rand_between do
-    it 'returns a random integer between a and b inclusively' do
-      expect(rand_between(0, 10)).to be_between(0, 10)
-      expect(rand_between(0, 1)).to be_between(0, 1)
-      expect(rand_between(1, 1)).to eq(1)
-    end
-  end
-end
+require_relative "../lib/data_generators"
+require_relative "../lib/Table"
 
 module TestDataGenerator
   describe StringGenerator do
@@ -193,6 +163,16 @@ module TestDataGenerator
       end
 
       expect(tries).to be < 100000
+    end
+  end
+
+  describe Generator do
+    describe :to_unique do
+      it 'returns a unique version of this generator' do
+        enum = EnumGenerator.new([1,1,1,2,3]).to_unique
+        expect(enum.iterate 3).to contain_exactly(1, 2, 3)
+        expect { enum.iterate 4 }.to raise_error(IndexError)
+      end
     end
   end
 
