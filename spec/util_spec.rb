@@ -43,6 +43,35 @@ describe "util" do
         expect { Maybe.nothing.from_just }.to raise_error
       end
     end
+
+    describe :== do
+      it 'compares Maybes in the obvious way' do
+        expect(Maybe.nothing).to eq(Maybe.nothing)
+        expect(Maybe.just(8)).to eq(Maybe.just(8))
+      end
+    end
+
+    describe :fmap do
+      it 'just(x) to just(f(x))' do
+        expect(Maybe.just('abcd').fmap(&:length)).to eq(Maybe.just 4)
+      end
+    end
+
+    describe :into do
+      it 'calls block with contents of Maybe, or returns nothing if empty' do
+        expect(Maybe.just('abcd').into {
+          |x| Maybe.just(x.length)
+        }).to eq(Maybe.just 4)
+      end
+    end
+
+    describe :check do
+      it 'returns false if Nothing, or passes contents to block (expected to return boolean)' do
+        expect(Maybe.just(1).check { |x| x > 0 }).to be true
+        expect(Maybe.just(-1).check { |x| x > 0 }).to be false
+        expect(Maybe.nothing.check { |x| x > 0 }).to be false
+      end
+    end
   end
 
   describe :rand_in do

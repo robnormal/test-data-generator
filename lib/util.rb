@@ -18,12 +18,32 @@ class Maybe
     end
   end
 
+  def ==(m)
+    (nothing? && m.nothing?) || (from_just == m.from_just)
+  end
+
   def fmap(&blk)
-    if nothing? then self else Maybe.just(blk.call @value) end
+    if nothing?
+      self
+    else
+      Maybe.just(blk.call @value)
+    end
   end
 
   def into(&blk)
-    if nothing? then self else blk.call @value end
+    if nothing?
+      self
+    else
+      blk.call @value
+    end
+  end
+
+  def check
+    if nothing?
+      false
+    else
+      yield @value
+    end
   end
 
   def self.just(x)
@@ -32,6 +52,10 @@ class Maybe
 
   def self.nothing
     self.new(true, nil)
+  end
+
+  def self.maybe(x)
+    if x.nil? then Maybe.nothing else Maybe.just x end
   end
 
   private
