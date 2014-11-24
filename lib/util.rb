@@ -5,8 +5,11 @@ class HashAppendable < Hash
   end
 end
 
+def hash_subset(hash, keys)
+  keys.inject({}) { |h, k| h[k] = hash[k] }
+end
+
 # choose random element from an Enumerable
-require 'forgery'
 def rand_in(xs)
   xs.to_a.sample
 end

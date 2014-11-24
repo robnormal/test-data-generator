@@ -44,6 +44,12 @@ module TestDataGenerator
       until generate!.nil?; end
     end
 
+    def data_for(column_id)
+      @data[column_id.table] && @data[column_id.table][column_id.column_id]
+    end
+
+    private
+
     def dependency_graph
       if @dep_graph.nil?
         @dep_graph = DirectedGraph.new(
@@ -53,8 +59,6 @@ module TestDataGenerator
 
       @dep_graph
     end
-
-    private
 
     def row(table)
       store_rows(table, @tables[table].generate)
@@ -68,10 +72,7 @@ module TestDataGenerator
     def fulfill_needs(table)
       t = @tables[table]
 
-      # Get data for Tables this table depends on
-      source_data = t.tables_depended_on.map { |table| @data[table] }
-
-      t.needs(source_data).each do |source, num|
+      t.needs(@data).each do |source, num|
         # If row cannot be created, needs are unfulfillable, so bail
         if space_left(table) < num
           raise(RuntimeError, "Unable to fulfill requirements for "

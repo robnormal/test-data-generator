@@ -234,9 +234,6 @@ module TestDataGenerator
     def generate
       @col_accum.sample
     end
-
-    def dependencies
-    end
   end
 end
 
