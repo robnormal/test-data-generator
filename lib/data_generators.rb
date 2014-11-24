@@ -26,7 +26,7 @@ module TestDataGenerator
 
   # creates lorem ipsum verbiage
   class WordGenerator < ForgeryGenerator
-    # @param count [Fixnum] number of words per phrase; can be Integer, Array, or Range.
+    # @param count [Integer] number of words per phrase; can be Integer, Array, or Range.
     #   If Array or Range, number of words is randomly selected for each phrase
     def initialize(count)
       super(:lorem_ipsum, :words)
@@ -38,7 +38,6 @@ module TestDataGenerator
     end
 
     private
-    @count
 
     def num_words
       if @count.is_a? Integer
@@ -66,12 +65,9 @@ module TestDataGenerator
       @chars = chars
 
       if length.is_a? Range
-        min_length = length.min
-        max_length = length.max
-        length = nil
-      end
-
-      if length
+        @min_length = length.min
+        @max_length = length.max
+      elsif length
         @length = length
       elsif max_length
         @min_length = min_length
@@ -86,12 +82,6 @@ module TestDataGenerator
 
       (length.times.collect { rand_in @chars }).join
     end
-
-    private
-    @min_length
-    @max_length
-    @length # exact length for all values
-    @chars # set of characters to choose from
   end
 
   class NumberGenerator
@@ -101,17 +91,13 @@ module TestDataGenerator
     # [min] minimum value
     # [greater_than] Column data in Database object
     def initialize(max: nil, min: 0, greater_than: nil)
-      if max
-        @max = max
-      else
+      if max.nil?
         raise(ArgumentError, "#{self.class} requires :max option")
       end
 
-      if greater_than
-        @greater_than = greater_than
-      else
-        @min = min
-      end
+      @max = max
+      @min = min
+      @greater_than = greater_than
     end
 
     def generate
@@ -131,11 +117,6 @@ module TestDataGenerator
 
       rand_between(min, @max)
     end
-
-    private
-    @greater_than
-    @min
-    @max
   end
 
   class UrlGenerator
@@ -175,23 +156,16 @@ module TestDataGenerator
     def generate
       if @max && @count >= @max
         raise(IndexError, "No more unique data; all #{@max} unique values have been used")
-      else
-        begin
-          value = @generator.generate
-        end while @data_tracker[value]
-
-        @data_tracker[value] = true
-        @count += 1
-        value
       end
-    end
 
-    private
-    @generator
-    @defer
-    @data_tracker
-    @max
-    @count
+      begin
+        value = @generator.generate
+      end while @data_tracker[value]
+
+      @data_tracker[value] = true
+      @count += 1
+      value
+    end
   end
 
   # Decorator class - returns base Generator values mixed with NULLs
@@ -212,14 +186,9 @@ module TestDataGenerator
         @generator.generate
       end
     end
-
-    private
-    @generator
-    @data_tracker
   end
 
   # for values selected from a set
-  # including any column that "belongs_to" another column
   class EnumGenerator
     include Generator
 
@@ -228,31 +197,30 @@ module TestDataGenerator
     end
 
     def initialize(set, unique: false)
-      @set = set.to_a
       @unique = unique
+      if unique
+        @set = set.uniq.shuffle
+      else
+        @set = set.to_a
+      end
+
+      @set = if unique then set.uniq.shuffle else set.to_a end
     end
 
     def generate
       if @unique
-        # intialize @data, if not initialized
-        if !@data
-          @data = @set.uniq.shuffle
-        end
-
-        if @data.empty?
+        if @set.empty?
           raise(IndexError, "No more unique data")
         end
 
-        @data.shift
+        @set.shift
       else
         @set.sample
       end
     end
-
-    private
-    @set
-    @data
   end
+
+
 
   # selects values from a column in a table
   class BelongsToGenerator
