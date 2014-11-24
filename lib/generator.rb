@@ -38,5 +38,56 @@ module TestDataGenerator
       UniqueByUsedGenerator.new self
     end
   end
+
+  # marker for generators guarenteed to return unique values
+  module UniqueGenerator
+    include Generator
+
+    # whether we have any data left
+    def empty?; raise NotImplementedError end
+
+    # "forget" data that has been produced so far
+    def reset!; raise NotImplementedError end
+
+    # raise error - can't fulfill data request
+    def runout
+      raise(RuntimeError, 'no more unique values')
+    end
+  end
+
+  # Decorator class - generates values until it gets to one it
+  #   hasn't generated before
+  class UniqueByUsedGenerator
+    include UniqueGenerator
+
+    # [gen] base Generator
+    # [max] maximum number of unique values available
+    def initialize(gen, max = nil)
+      @generator = gen
+      @used = {}
+      @max = Maybe.maybe max
+      reset!
+    end
+
+    def generate
+      if @available.check { |x| x <= 0 }; runout end
+
+      begin
+        value = @generator.generate
+      end while @used[value]
+
+      @used[value] = true
+      @available = @available.fmap { |x| x - 1 }
+      value
+    end
+
+    def empty?
+    end
+
+    def reset!
+      @available = @max
+    end
+  end
+
 end
 

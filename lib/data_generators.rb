@@ -135,59 +135,6 @@ module TestDataGenerator
     end
   end
 
-  # marker for generators guarenteed to return unique values
-  module UniqueGenerator
-    include Generator
-
-    def runout
-      raise(RuntimeError, 'no more unique values')
-    end
-  end
-
-  # Decorator class - generates values until it gets to one it
-  #   hasn't generated before
-  class UniqueByUsedGenerator
-    include UniqueGenerator
-
-    # [gen] base Generator
-    # [max] maximum number of unique values available
-    def initialize(gen, max = nil)
-      @generator = gen
-      @used = {}
-      @available = Maybe.maybe max
-    end
-
-    def generate
-      if @available.check { |x| x <= 0 }; runout end
-
-      begin
-        value = @generator.generate
-      end while @used[value]
-
-      @used[value] = true
-      @available = @available.fmap { |x| x - 1 }
-      value
-    end
-  end
-
-  # Decorator class - generates caches all possible values, then
-  #   "generating" them in a random order
-  class UniqueByUnusedGenerator
-    include UniqueGenerator
-
-    # [gen] base Generator
-    # [max] maximum number of unique values available
-    def initialize(gen, max)
-      @unused = gen.iterate(max).uniq.shuffle
-    end
-
-    def generate
-      if @unused.empty?; runout end
-
-      @unused.pop
-    end
-  end
-
   # Decorator class - returns base Generator values mixed with NULLs
   class NullGenerator
     include Generator
@@ -209,7 +156,7 @@ module TestDataGenerator
     include Generator
 
     def to_unique
-      UniqueByUnusedGenerator.new(self, @set.length)
+      UniqueEnumGenerator.new(@set)
     end
 
     def initialize(set)
@@ -221,6 +168,28 @@ module TestDataGenerator
     end
   end
 
+  # Decorator class - generates caches all possible values, then
+  #   "generating" them in a random order
+  class UniqueEnumGenerator < EnumGenerator
+    include UniqueGenerator
+
+    # [gen] base Generator
+    # [max] maximum number of unique values available
+    def initialize(data)
+      @data = data.to_a.uniq
+      reset!
+    end
+
+    def generate
+      if @unused.empty?; runout end
+
+      @unused.pop
+    end
+
+    def reset!
+      @unused = @data.shuffle
+    end
+  end
 
 
   # selects values from a column in a table

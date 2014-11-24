@@ -131,6 +131,19 @@ module TestDataGenerator
     end
   end
 
+  describe UniqueEnumGenerator do
+    it 'produces unique values from a given dataset' do
+      uniq = UniqueEnumGenerator.new('a'..'c')
+      expect(uniq.iterate 3).to contain_exactly('a', 'b', 'c')
+    end
+
+    it 'raises IndexError if more data is requested than there are unique elements' do
+      uniq = UniqueEnumGenerator.new('a'..'c')
+      expect { uniq.iterate 4 }.to raise_error
+    end
+  end
+
+
   describe NullGenerator do
     it 'produces null with the given probability' do
       num = NumberGenerator.new(max: 100)
