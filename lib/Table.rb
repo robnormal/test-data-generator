@@ -18,6 +18,10 @@ module TestDataGenerator
       end
     end
 
+    def generate
+      @columns.values.map &:generate
+    end
+
     # add a Column to the table
     def add!(column)
       @columns[column.name] = column
@@ -44,12 +48,10 @@ module TestDataGenerator
       end
     end
 
-    def generate
-      @columns.values.map &:generate
+    # Determine which Tables need to produce more rows before we can proceed,
+    # and how many rows we need
+    def needs(data)
     end
-
-    private
-    @columns
   end
 end
 

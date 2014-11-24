@@ -35,9 +35,8 @@ module TestDataGenerator
       if table.nil?
         false
       else
-        @data[table] << @tables[table].generate
-        check_for_full table
-        true
+        fulfill_needs table
+        row table
       end
     end
 
@@ -55,15 +54,50 @@ module TestDataGenerator
 
     private
 
+    def row(table)
+      store_rows(table, @tables[table].generate)
+    end
+
+    def store_rows(table, rows)
+      @data[table] += rows
+      still_has_space table
+    end
+
+    def fulfill_needs(table)
+      t = @tables[table]
+
+      # Get data for Tables this table depends on
+      source_data = t.tables_depended_on.map { |table| @data[table] }
+
+      t.needs(source_data).each do |source, num|
+        # If row cannot be created, needs are unfulfillable, so bail
+        if space_left(table) < num
+          raise(RuntimeError, "Unable to fulfill requirements for "
+            "#{source.name} due to dependency from #{table}"
+          )
+        end
+
+        store_rows(table, t.iterate num)
+      end
+    end
+
+    def space_left(table)
+      @limits[table] - @data[table].length
+    end
+
     def create_thresholds
       @table_picker = WeigtedPicker.new(@limits)
     end
 
     # stop generating rows if table is full
-    def check_for_full(table)
+    def still_has_space(table)
       if @data[table].length >= @limits[table]
         @limits.delete table
         create_thresholds
+
+        false
+      else
+        true
       end
     end
 
