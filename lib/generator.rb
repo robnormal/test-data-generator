@@ -32,8 +32,10 @@ module TestDataGenerator
       needed
     end
 
-    def to_unique
-      UniqueGenerator.new self
+    # Defaults to UniqueByUsed strategy
+    # @param options [Hash] Options for uniqueness strategy
+    def to_unique(options = {})
+      UniqueByUsedGenerator.new self
     end
   end
 end

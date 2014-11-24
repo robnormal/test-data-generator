@@ -105,12 +105,7 @@ module TestDataGenerator
         current = @greater_than.last
 
         # enforce min requirement, if present
-        if @min && @min > current
-          min = @min
-        else
-          min = current
-        end
-
+        min = if @min && @min > current then @min else current end
       else
         min = @min
       end
@@ -140,31 +135,56 @@ module TestDataGenerator
     end
   end
 
-  # Decorator class - returns unique values from base Generator
-  class UniqueGenerator
+  # marker for generators guarenteed to return unique values
+  module UniqueGenerator
     include Generator
+
+    def runout
+      raise(RuntimeError, 'no more unique values')
+    end
+  end
+
+  # Decorator class - generates values until it gets to one it
+  #   hasn't generated before
+  class UniqueByUsedGenerator
+    include UniqueGenerator
 
     # [gen] base Generator
     # [max] maximum number of unique values available
-    def initialize(gen, max: nil)
+    def initialize(gen, max = nil)
       @generator = gen
-      @max = max
-      @count = 0
-      @data_tracker = {}
+      @used = {}
+      @available = Maybe.maybe max
     end
 
     def generate
-      if @max && @count >= @max
-        raise(IndexError, "No more unique data; all #{@max} unique values have been used")
-      end
+      if @available.check { |x| x <= 0 }; runout end
 
       begin
         value = @generator.generate
-      end while @data_tracker[value]
+      end while @used[value]
 
-      @data_tracker[value] = true
-      @count += 1
+      @used[value] = true
+      @available = @available.fmap { |x| x - 1 }
       value
+    end
+  end
+
+  # Decorator class - generates caches all possible values, then
+  #   "generating" them in a random order
+  class UniqueByUnusedGenerator
+    include UniqueGenerator
+
+    # [gen] base Generator
+    # [max] maximum number of unique values available
+    def initialize(gen, max)
+      @unused = gen.iterate(max).uniq.shuffle
+    end
+
+    def generate
+      if @unused.empty?; runout end
+
+      @unused.pop
     end
   end
 
@@ -180,11 +200,7 @@ module TestDataGenerator
     end
 
     def generate
-      if rand < @null
-        nil
-      else
-        @generator.generate
-      end
+      if rand < @null then nil else @generator.generate end
     end
   end
 
@@ -193,30 +209,15 @@ module TestDataGenerator
     include Generator
 
     def to_unique
-      EnumGenerator.new(@set, unique: true)
+      UniqueByUnusedGenerator.new(self, @set.length)
     end
 
-    def initialize(set, unique: false)
-      @unique = unique
-      if unique
-        @set = set.uniq.shuffle
-      else
-        @set = set.to_a
-      end
-
-      @set = if unique then set.uniq.shuffle else set.to_a end
+    def initialize(set)
+      @set = set.to_a
     end
 
     def generate
-      if @unique
-        if @set.empty?
-          raise(IndexError, "No more unique data")
-        end
-
-        @set.shift
-      else
-        @set.sample
-      end
+      @set.sample
     end
   end
 
@@ -233,6 +234,27 @@ module TestDataGenerator
 
     def generate
       @col_accum.sample
+    end
+  end
+
+  class UniqueBelongsToGenerator
+    include Generator
+
+    # @param
+    def initialize(db, col_id, data_store)
+      @db = db
+      @column = col_id
+      @data_store = data_store
+      update_unused
+    end
+
+    def generate
+      @unused.sample
+    end
+
+    private
+    def update_unused
+      @unused += db.data_for(@column).drop(@unused.length)
     end
   end
 end

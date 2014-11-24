@@ -115,25 +115,19 @@ module TestDataGenerator
         expect(['Alice', 'Bob', 'Eve']).to include(x)
       end
     end
-
-    it 'produces unique elements if "unique" option is true' do
-      enum = EnumGenerator.new([1,1,1,2,3], unique: true)
-      expect(enum.iterate 3).to contain_exactly(1, 2, 3)
-      expect { enum.iterate 4 }.to raise_error(IndexError)
-    end
   end
 
-  describe UniqueGenerator do
+  describe UniqueByUsedGenerator do
     it 'produces unique values from a given generator' do
       str = StringGenerator.new(chars: 'a'..'c', max_length: 1)
-      uniq = UniqueGenerator.new(str)
+      uniq = UniqueByUsedGenerator.new(str)
       expect(uniq.iterate 3).to contain_exactly('a', 'b', 'c')
     end
 
-    it 'raises IndexError if more data is produced than the limit set by "max" option' do
+    it 'raises IndexError if more data is produced than limit set by second argument' do
       str = StringGenerator.new(chars: 'a'..'c', max_length: 1)
-      uniq = UniqueGenerator.new(str, max: 3)
-      expect { uniq.iterate 4 }.to raise_error(IndexError)
+      uniq = UniqueByUsedGenerator.new(str, 3)
+      expect { uniq.iterate 4 }.to raise_error
     end
   end
 
@@ -171,7 +165,7 @@ module TestDataGenerator
       it 'returns a unique version of this generator' do
         enum = EnumGenerator.new([1,1,1,2,3]).to_unique
         expect(enum.iterate 3).to contain_exactly(1, 2, 3)
-        expect { enum.iterate 4 }.to raise_error(IndexError)
+        expect { enum.iterate 4 }.to raise_error
       end
     end
   end
