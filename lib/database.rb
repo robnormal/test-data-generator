@@ -30,16 +30,13 @@ module TestDataGenerator
     def generate!
       # pick table at random (weighted odds), and return what it generates
       table = @table_picker.pick
+
+      # if no table was picked, we're out of stuff to generate
       if table.nil?
         false
       else
         @data[table] << @tables[table].generate
-
-        if @data[table].length >= @limits[table]
-          @limits.delete table
-          create_thresholds
-        end
-
+        check_for_full table
         true
       end
     end
@@ -50,12 +47,7 @@ module TestDataGenerator
 
     def dependency_graph
       if @dep_graph.nil?
-        dependencies = []
-        @tables.each do |table|
-          dependencies += table.dependencies
-        end
-
-        @dep_graph = DirectedGraph.new dependencies
+        @dep_graph = DirectedGraph.new(@tables.map(&:dependencies).flatten)
       end
 
       @dep_graph
@@ -67,12 +59,14 @@ module TestDataGenerator
       @table_picker = WeigtedPicker.new(@limits)
     end
 
-    # call when table fills up
-    def table_filled(table)
-      # ignore this table when picking tables
-      @limits.delete table
-      create_thresholds
+    # stop generating rows if table is full
+    def check_for_full(table)
+      if @data[table].length >= @limits[table]
+        @limits.delete table
+        create_thresholds
+      end
     end
+
   end
 end
 
