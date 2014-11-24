@@ -23,6 +23,14 @@ module TestDataGenerator
       @generator.generate
     end
 
+    def dependencies
+      @generator.dependencies
+    end
+
+    def needs(db)
+      @generator.needs db
+    end
+
     # [table] Table this Column will belong to
     # [name] name to give to the Column
     # [type] Symbol designating Column type
