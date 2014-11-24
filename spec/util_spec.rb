@@ -14,6 +14,37 @@ describe "util" do
     end
   end
 
+  describe Maybe do
+    describe 'Maybe.just' do
+      it 'stores a value in a Maybe' do
+        expect(Maybe.just(3)).to be_a(Maybe)
+      end
+    end
+
+    describe 'Maybe.nothing' do
+      it 'produces an empty Maybe' do
+        expect(Maybe.nothing).to be_a(Maybe)
+      end
+    end
+
+    describe :nothing? do
+      it 'returns is true iff the Maybe is empty' do
+        expect(Maybe.just(3).nothing?).to be false
+        expect(Maybe.nothing.nothing?).to be true
+      end
+    end
+
+    describe :from_just do
+      it 'retrieves value stored with Maybe.just' do
+        expect(Maybe.just(3).from_just).to be 3
+      end
+
+      it 'raises an error if it is empty' do
+        expect { Maybe.nothing.from_just }.to raise_error
+      end
+    end
+  end
+
   describe :rand_in do
     it 'returns a random element in an Enumerable' do
       class DummyEnumerable
