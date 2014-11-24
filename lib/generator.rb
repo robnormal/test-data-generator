@@ -70,22 +70,22 @@ module TestDataGenerator
     end
 
     def generate
-      if @available.check { |x| x <= 0 }; runout end
+      if empty?; runout end
 
       begin
         value = @generator.generate
       end while @used[value]
 
       @used[value] = true
-      @available = @available.fmap { |x| x - 1 }
       value
     end
 
     def empty?
+      !@max.nothing? && @max.from_just <= @used.length
     end
 
     def reset!
-      @available = @max
+      @used = {}
     end
   end
 

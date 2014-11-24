@@ -129,6 +129,30 @@ module TestDataGenerator
       uniq = UniqueByUsedGenerator.new(str, 3)
       expect { uniq.iterate 4 }.to raise_error
     end
+
+    describe :reset! do
+      it 'forgets unique values already produced' do
+        str = StringGenerator.new(chars: 'a'..'c', max_length: 1)
+        uniq = UniqueByUsedGenerator.new(str)
+        uniq.iterate(3)
+        uniq.reset!
+        expect { uniq.iterate 1 }.to_not raise_error
+      end
+    end
+
+    describe :empty? do
+      it 'reports if we have run out of unique values to generate' do
+        str = StringGenerator.new(chars: 'a'..'c', max_length: 1)
+        uniq = UniqueByUsedGenerator.new(str, 3)
+
+        uniq.iterate(2)
+        expect(uniq.empty?).to be false
+
+        uniq.reset!
+        uniq.iterate(3)
+        expect(uniq.empty?).to be true
+      end
+    end
   end
 
   describe UniqueEnumGenerator do
