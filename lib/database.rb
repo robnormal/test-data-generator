@@ -7,7 +7,7 @@ module TestDataGenerator
     attr_reader :name, :data
 
     # @param name [String]
-    # @param table_limits [Hash{Table => Fixnum}]
+    # @param table_limits [Hash{Table => Integer}]
     #   Tables with the total number of entries to be generated for them
     def initialize(name, table_limits)
       @name = name
@@ -46,7 +46,9 @@ module TestDataGenerator
 
     def dependency_graph
       if @dep_graph.nil?
-        @dep_graph = DirectedGraph.new(@tables.map(&:dependencies).flatten)
+        @dep_graph = DirectedGraph.new(
+          @tables.map(&:dependencies_as_edges).flatten
+        )
       end
 
       @dep_graph

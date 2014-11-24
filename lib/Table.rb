@@ -37,21 +37,20 @@ module TestDataGenerator
     end
 
     def dependencies
-      dependencies = []
-      @columns.each do |column|
-        if column.is_a? DependentColumnStub
-          # turn dependencies into edges - a pair like [[table, column], [table, column]]
-          dependencies += column.dependencies.map { |d|
-            [[@name, column.name], d]
-          }
-        end
-      end
+      @columns.map(&:dependencies).flatten
+    end
+
+    def dependencies_as_edges
+      @columns.map { |c|
+        c.dependencies.map { |d| [[@name, c.name], [d.table, d.column]] }
+      }.flatten
     end
 
     # Determine which Tables need to produce more rows before we can proceed,
     # and how many rows we need
     def needs(data)
     end
+
   end
 end
 
