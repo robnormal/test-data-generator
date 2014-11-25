@@ -21,6 +21,22 @@ RSpec::Matchers.define :eventually do |matcher|
   def supports_block_expectations?; true end
 end
 
+def db_stub(example, column_data)
+  # stub database
+  db = instance_double('Datebase')
+  foreign = ColumnId.new(:users, :id)
+
+  db_stub_set_data(db, foreign, column_data)
+
+  [db, foreign]
+end
+
+def db_stub_set_data(stub, foreign, data) 
+  allow(stub).to receive(:data_for).with(foreign)
+    .and_return(data)
+end
+
+
 module TestDataGenerator
   describe StringGenerator do
     it 'produces strings of length <= "max_length" option, if any' do
@@ -209,32 +225,20 @@ module TestDataGenerator
 
   describe BelongsToGenerator do
     it 'selects data from a column in a Database' do
-      foreign = ColumnId.new(:users, :id)
-
-      # stub database
-      db = instance_double('Datebase')
-
-      allow(db).to receive(:data_for).with(foreign)
-        .and_return([2,3,4])
+      db, foreign = *db_stub(self, [2,3,4])
 
       belongs = BelongsToGenerator.new(db, foreign)
       expect { belongs.generate }.to eventually be 2
     end
 
     it 'always uses the current data' do
-      foreign = ColumnId.new(:users, :id)
-
       # stub database
-      db = instance_double('Datebase')
-
-      allow(db).to receive(:data_for).with(foreign)
-        .and_return([1])
+      db, foreign = *db_stub(self, [1])
 
       belongs = BelongsToGenerator.new(db, foreign)
       expect(belongs.generate).to be 1
 
-      allow(db).to receive(:data_for).with(foreign)
-        .and_return([2])
+      db_stub_set_data(db, foreign, [2])
 
       expect(belongs.generate).to be 2
     end
