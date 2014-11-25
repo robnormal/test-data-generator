@@ -53,6 +53,15 @@ module TestDataGenerator
     def runout
       raise(RuntimeError, 'no more unique values')
     end
+
+    def generate
+      if empty?; runout end
+
+      next_value
+    end
+
+    protected
+    def next_value; raise NotImplementedError end
   end
 
   # Decorator class - generates values until it gets to one it
@@ -69,23 +78,23 @@ module TestDataGenerator
       reset!
     end
 
-    def generate
-      if empty?; runout end
-
-      begin
-        value = @generator.generate
-      end while @used[value]
-
-      @used[value] = true
-      value
-    end
-
     def empty?
       !@max.nothing? && @max.from_just <= @used.length
     end
 
     def reset!
       @used = {}
+    end
+
+    protected
+
+    def next_value
+      begin
+        value = @generator.generate
+      end while @used[value]
+
+      @used[value] = true
+      value
     end
   end
 

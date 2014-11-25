@@ -180,14 +180,18 @@ module TestDataGenerator
       reset!
     end
 
-    def generate
-      if @unused.empty?; runout end
-
-      @unused.pop
+    def empty?
+      @unused.empty?
     end
 
     def reset!
       @unused = @data.shuffle
+    end
+
+    protected
+
+    def next_value
+      @unused.pop
     end
   end
 
@@ -197,33 +201,49 @@ module TestDataGenerator
     include Generator
 
     # @param col_accum [Accumulator] Accumulator for Column this generator points to
-    def initialize(column_accum)
-      @col_accum = column_accum
+    def initialize(database, column_id)
+      @db = database
+      @column = column_id
     end
 
     def generate
-      @col_accum.sample
+      @db.data_for(@column).sample
     end
   end
 
   class UniqueBelongsToGenerator
-    include Generator
+    include UniqueGenerator
 
     # @param
-    def initialize(db, col_id, data_store)
+    def initialize(database, column_id, data_store = [])
       @db = db
       @column = col_id
       @data_store = data_store
-      update_unused
+      reset!
     end
 
-    def generate
-      @unused.sample
+    def empty?
+      @unused.empty?
+    end
+
+    def reset!
+      @unused = @db.data_for(@column)
+    end
+
+    protected
+    def next_value
+      update_unused
+
+      key = @unused.keys.sample
+      value = @unused[key]
+      @unused.delete key
+
+      value
     end
 
     private
     def update_unused
-      @unused += db.data_for(@column).drop(@unused.length)
+      @unused += @db.data_for(@column).drop(@unused.length)
     end
   end
 end
