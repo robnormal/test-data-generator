@@ -207,5 +207,37 @@ module TestDataGenerator
     end
   end
 
+  describe BelongsToGenerator do
+    it 'selects data from a column in a Database' do
+      foreign = ColumnId.new(:users, :id)
+
+      # stub database
+      db = instance_double('Datebase')
+
+      allow(db).to receive(:data_for).with(foreign)
+        .and_return([2,3,4])
+
+      belongs = BelongsToGenerator.new(db, foreign)
+      expect { belongs.generate }.to eventually be 2
+    end
+
+    it 'always uses the current data' do
+      foreign = ColumnId.new(:users, :id)
+
+      # stub database
+      db = instance_double('Datebase')
+
+      allow(db).to receive(:data_for).with(foreign)
+        .and_return([1])
+
+      belongs = BelongsToGenerator.new(db, foreign)
+      expect(belongs.generate).to be 1
+
+      allow(db).to receive(:data_for).with(foreign)
+        .and_return([2])
+
+      expect(belongs.generate).to be 2
+    end
+  end
 end
 

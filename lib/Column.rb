@@ -1,5 +1,6 @@
-require_relative('data_generators.rb')
-require_relative('Table.rb')
+require_relative('data_generators')
+require_relative('Table')
+require_relative('dependency')
 
 module TestDataGenerator
   class Column
