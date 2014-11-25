@@ -2,6 +2,25 @@ require "rspec"
 require_relative "../lib/data_generators"
 require_relative "../lib/Table"
 
+RSpec::Matchers.define :eventually do |matcher|
+  match do |block|
+    tries = 0
+    while tries < 10000
+      if matcher.supports_block_expectations? && matcher.matches?(actual)
+        break
+      elsif matcher.matches?(actual.call)
+        break
+      end
+        
+      tries += 1
+    end
+
+    tries < 10000
+  end
+
+  def supports_block_expectations?; true end
+end
+
 module TestDataGenerator
   describe StringGenerator do
     it 'produces strings of length <= "max_length" option, if any' do
@@ -173,27 +192,8 @@ module TestDataGenerator
       num = NumberGenerator.new(max: 100)
       null = NullGenerator.new(num, 0.5)
 
-      # test that nil is eventually produced
-      tries = 0
-      while tries < 100000
-        if null.generate.nil?
-          break
-        end
-        tries += 1
-      end
-
-      expect(tries).to be < 100000
-
-      # test that something *other than* nil is eventually produced
-      tries = 0
-      while tries < 100000
-        unless null.generate.nil?
-          break
-        end
-        tries += 1
-      end
-
-      expect(tries).to be < 100000
+      expect { null.generate }.to eventually be_nil
+      expect { null.generate }.to eventually be_truthy
     end
   end
 
