@@ -1,12 +1,17 @@
-require_relative('data_generators')
-require_relative('Table')
-require_relative('dependency')
+require 'forwardable'
+
+require_relative 'data_generators'
+require_relative 'Table'
+require_relative 'dependency'
 
 module TestDataGenerator
   class Column
     include Generator
+    extend Forwardable
 
     attr_reader :name
+
+    def_delegators(:@generator, :generate, :dependencies, :needs)
 
     # [name] name of this column
     # [generator] Generator used by this Column
@@ -17,19 +22,6 @@ module TestDataGenerator
       else
         raise ArgumentError, "Argument 3 for Column.new must be a Generator"
       end
-    end
-
-    # generates and returns a single value
-    def generate
-      @generator.generate
-    end
-
-    def dependencies
-      @generator.dependencies
-    end
-
-    def needs(db)
-      @generator.needs db
     end
 
     # [table] Table this Column will belong to
@@ -92,15 +84,6 @@ module TestDataGenerator
 
       Column.new(name.to_sym, generator)
     end
-
-    private
-    @table
-    @name
-    @generator
-    @options
-
-    @being_selected_from
-    @data
   end
 
   # Database object will turn this into
