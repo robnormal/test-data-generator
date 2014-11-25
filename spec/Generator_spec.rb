@@ -159,7 +159,7 @@ module TestDataGenerator
       expect(uniq.iterate 3).to contain_exactly('a', 'b', 'c')
     end
 
-    it 'raises IndexError if more data is produced than limit set by second argument' do
+    it 'raises error if more data is produced than limit set by second argument' do
       str = StringGenerator.new(chars: 'a'..'c', max_length: 1)
       uniq = UniqueByUsedGenerator.new(str, 3)
       expect { uniq.iterate 4 }.to raise_error
@@ -196,7 +196,7 @@ module TestDataGenerator
       expect(uniq.iterate 3).to contain_exactly('a', 'b', 'c')
     end
 
-    it 'raises IndexError if more data is requested than there are unique elements' do
+    it 'raises error if more data is requested than there are unique elements' do
       uniq = UniqueEnumGenerator.new('a'..'c')
       expect { uniq.iterate 4 }.to raise_error
     end
@@ -241,6 +241,36 @@ module TestDataGenerator
       db_stub_set_data(db, foreign, [2])
 
       expect(belongs.generate).to be 2
+    end
+  end
+
+  describe UniqueBelongsToGenerator do
+    it 'selects unique data from a column in a Database' do
+      belongs = UniqueBelongsToGenerator.new(*db_stub(self, [2,3,4]))
+
+      expect(belongs.iterate 3).to contain_exactly(2, 3, 4)
+    end
+
+    it "knows when it's empty" do
+      belongs = UniqueBelongsToGenerator.new(*db_stub(self, [2,3,4]))
+      belongs.iterate 3
+      expect(belongs.empty?).to be true
+    end
+
+    it 'stays up-to-date with column data, without reusing old data' do
+      db, foreign = *db_stub(self, [3,4,5])
+      belongs = UniqueBelongsToGenerator.new(db, foreign)
+      belongs.iterate 3
+
+      # new data gets added to column...
+      db_stub_set_data(db, foreign, [3,4,5,9])
+
+      expect(belongs.generate).to be 9
+    end
+
+    it 'raises error if asked for more data than the column has' do
+      db, foreign = *db_stub(self, [0, 1])
+      expect { uniq.iterate 3 }.to raise_error
     end
   end
 end

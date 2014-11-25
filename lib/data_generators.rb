@@ -216,8 +216,8 @@ module TestDataGenerator
 
     # @param
     def initialize(database, column_id, data_store = [])
-      @db = db
-      @column = col_id
+      @db = database
+      @column = column_id
       @data_store = data_store
       reset!
     end
@@ -227,23 +227,30 @@ module TestDataGenerator
     end
 
     def reset!
-      @unused = @db.data_for(@column)
+      @unused = @db.data_for @column
+      @grabbed = @unused.length
+    end
+
+    # must update @unused before checking for empty
+    def generate
+      update_unused
+      super
     end
 
     protected
     def next_value
-      update_unused
-
-      key = @unused.keys.sample
+      key = rand(@unused.length)
       value = @unused[key]
-      @unused.delete key
+      @unused.delete_at key
 
       value
     end
 
     private
     def update_unused
-      @unused += @db.data_for(@column).drop(@unused.length)
+      data = @db.data_for @column
+      @unused += data.drop @grabbed
+      @grabbed = data.length
     end
   end
 end
