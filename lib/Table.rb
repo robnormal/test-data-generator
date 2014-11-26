@@ -5,11 +5,12 @@ module TestDataGenerator
   class Table
     include Generator
 
-    attr_reader :name
+    attr_reader :name, :column_names
 
     def initialize(name, col_config = [])
       @name          = name.to_sym
       @columns       = {}
+      @column_names  = []
 
       col_config.each do |cfg|
         col_name, type, args, options = *cfg
@@ -19,12 +20,13 @@ module TestDataGenerator
     end
 
     def generate
-      @columns.values.map &:generate
+      fmap(@columns, &:generate)
     end
 
     # add a Column to the table
     def add!(column)
       @columns[column.name] = column
+      @column_names << column.name
     end
 
     # add a Column using Column.from_spec

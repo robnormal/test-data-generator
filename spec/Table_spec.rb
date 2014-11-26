@@ -10,37 +10,54 @@ end
 
 module TestDataGenerator
   describe Table do
-    dummy = Table.new('dummy')
+    before :example do
+      @dummy = Table.new('dummy')
+      @age = Column.new('age', NumberGenerator.new(min: 18, max: 100))
+    end
 
     it 'has symbol attribute "name"' do
-      expect(dummy.name).to eq(:dummy)
+      expect(@dummy.name).to eq(:dummy)
     end
 
-    age = Column.new('age', NumberGenerator.new(min: 18, max: 100))
-    it '"add" adds a column, "column" retrieves one by name' do
-      dummy.add! age
-      expect(dummy.column(:age)).to eq(age)
+    context 'add! adds a column, and' do
+      describe :column do
+        it 'retrieves one by name' do
+          @dummy.add! @age
+          expect(@dummy.column(:age)).to eq(@age)
+        end
+      end
     end
 
-    describe 'add_from_spec' do
+    describe :add_from_spec do
       it 'adds a column via Column.from_spec()' do
-        dummy.add_from_spec!(:tries, :number, [max: 10])
-        expect(dummy.column(:tries).generate).to be_between(0, 10)
+        @dummy.add_from_spec!(:tries, :number, [max: 10])
+        expect(@dummy.column(:tries).generate).to be_between(0, 10)
+      end
+    end
+
+    describe :column_names do
+      it 'returns the names of the columns' do
+        @dummy.add! @age
+        @dummy.add_from_spec!(:tries, :number, [max: 10])
+        expect(@dummy.column_names).to eq([:age, :tries])
       end
     end
 
     def test_row(row)
       expect(row.length).to eq(2)
 
-      age, tries = *row
+      age = row[:age]
+      tries = row[:tries]
       expect(age).to be_between(18, 100)
       expect(tries).to be_between(0, 10)
     end
 
     describe 'generate' do
       it 'generates a full row' do
+        @dummy.add! @age
+        @dummy.add_from_spec!(:tries, :number, [max: 10])
         10.times do
-          test_row dummy.generate
+          test_row @dummy.generate
         end
       end
     end
@@ -55,12 +72,11 @@ module TestDataGenerator
         ]
 
         row = users.generate
-        id, name, title, created_at = *row
 
-        expect(id).to be_a(Fixnum)
-        expect(name).to be_a(String)
-        expect(title).to be_a(String)
-        expect(created_at).to be_a(Fixnum)
+        expect(row[:id]).to be_a(Fixnum)
+        expect(row[:name]).to be_a(String)
+        expect(row[:title]).to be_a(String)
+        expect(row[:created_at]).to be_a(Fixnum)
       end
     end
 
