@@ -4,6 +4,8 @@ require_relative 'directed_graph'
 require_relative 'util'
 
 module TestDataGenerator
+  # represents an entire database worth of data
+  # acts as a Mediator between different Tables and Columns
   class Database
     attr_reader :name, :data
 
@@ -14,13 +16,17 @@ module TestDataGenerator
       @name = name
       @tables = {}
       @limits = {}
-      @data = {}
 
       table_limits.each do |table, limit|
         @tables[table.name] = table
         @limits[table.name] = limit
-        @data[table.name] = []
       end
+
+      reset!
+
+      # allows dependent Columns to query the data they need
+      # without allowing them access to the full Database
+      @column_data = ColumnData.new @data
 
       if dependency_graph.has_cycles?
         raise(ArgumentError, 'tables have circular dependencies')
@@ -33,7 +39,15 @@ module TestDataGenerator
       # pick table at random (weighted odds), and return what it generates
       @table_picker.fmap(&:pick).fmap do |table|
         fulfill_needs table
-        row table
+
+        @tables[table].generate.each do |column, value|
+          @data[table][column] << value
+        end
+
+        if space_left(table) <= 0
+          @limits.delete table
+          create_thresholds
+        end
       end
     end
 
@@ -41,8 +55,15 @@ module TestDataGenerator
       until generate!.nothing?; end
     end
 
-    def data_for(column_id)
-      @data[column_id.table] && @data[column_id.table][column_id.column_id]
+    def reset!
+      @data = {}
+
+      @tables.each do |t_name, table|
+        @data[t_name] = {}
+        table.column_names.each do |c_name|
+          @data[t_name][c_name] = []
+        end
+      end
     end
 
 
@@ -58,53 +79,38 @@ module TestDataGenerator
       @dep_graph
     end
 
-    def row(table)
-      store_rows(table, @tables[table].generate)
-    end
-
-    def store_rows(table, rows)
-      @data[table] += rows
-      still_has_space table
-    end
-
     def fulfill_needs(table)
       t = @tables[table]
 
-      t.needs(@data).each do |source, num|
+      t.needs(@column_data).each do |source, num|
         # If row cannot be created, needs are unfulfillable, so bail
         if space_left(table) < num
           raise(RuntimeError, "Unable to fulfill requirements for " +
             "#{source.name} due to dependency from #{table}")
         end
 
-        store_rows(table, t.iterate(num))
+        num.times do
+          @tables[source].generate
+        end
       end
     end
 
     def space_left(table)
-      @limits[table] - @data[table].length
+      @limits[table] - row_count(table)
     end
 
     def create_thresholds
-      if @limits.empty?
-        @table_picker = Maybe.nothing
-      else
-        @table_picker = Maybe.just WeigtedPicker.new(@limits)
-      end
+      @table_picker =
+        if @limits.empty?
+          Maybe.nothing
+        else
+          Maybe.just(WeigtedPicker.new @limits)
+        end
     end
 
-    # stop generating rows if table is full
-    def still_has_space(table)
-      if @data[table].length >= @limits[table]
-        @limits.delete table
-        create_thresholds
-
-        false
-      else
-        true
-      end
+    def row_count(table)
+      @data[table].first[1].length || 0
     end
-
   end
 end
 
