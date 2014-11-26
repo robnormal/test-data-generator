@@ -12,10 +12,3 @@ module TestDataGenerator
   end
 end
 
-count = 0
-1000.times do
-  w = TestDataGenerator::WeigtedPicker.new(a: 2, b: 4)
-  count += 1 if w.pick == :a
-end
-
-p count / 1000

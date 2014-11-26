@@ -30,20 +30,24 @@ module TestDataGenerator
     end
 
     describe :initialize do
-      it 'accepts a Hash, specifying tables in the DB and how many rows to generate' do
-        table1 = Table.new(:table1)
-        table2 = Table.new(:table2)
-        col1 = Column.new(:col1, CountGenerator.new)
-        col2 = Column.new(:col2, CountGenerator.new)
+      describe 'it accepts a Hash of tables => # of rows, then' do
+        describe :generate do
+          it 'generates rows' do
+            table1 = Table.new(:table1)
+            table2 = Table.new(:table2)
+            col1 = Column.new(:col1, CountGenerator.new)
+            col2 = Column.new(:col2, CountGenerator.new)
 
-        table1.add! col1
-        table2.add! col2
+            table1.add! col1
+            table2.add! col2
 
-        db = Database.new('db', { table1 => 3, table2 => 4 })
-        db.generate_all!
+            db = Database.new('db', { table1 => 3, table2 => 4 })
+            db.generate_all!
 
-        expect(db.data[:table1]).to be_a(Array)
-        expect(db.data[:table1]).to contain_exactly(1, 2, 3)
+            expect(db.data[:table1]).to be_a(Array)
+            expect(db.data[:table1]).to contain_exactly(1, 2, 3)
+          end
+        end
       end
     end
   end
