@@ -38,16 +38,7 @@ module TestDataGenerator
     def generate!
       # pick table at random (weighted odds), and return what it generates
       @table_picker.fmap(&:pick).fmap do |table|
-        fulfill_needs table
-
-        @tables[table].generate.each do |column, value|
-          @data[table][column] << value
-        end
-
-        if space_left(table) <= 0
-          @limits.delete table
-          create_thresholds
-        end
+        generate_for(table)
       end
     end
 
@@ -72,6 +63,19 @@ module TestDataGenerator
 
     private
 
+    def generate_for(table)
+      fulfill_needs table
+
+      @tables[table].generate.each do |column, value|
+        @data[table][column] << value
+      end
+
+      if space_left(table) <= 0
+        @limits.delete table
+        create_thresholds
+      end
+    end
+
     def dependency_graph
       if @dep_graph.nil?
         @dep_graph = DirectedGraph.new(
@@ -85,17 +89,15 @@ module TestDataGenerator
     def fulfill_needs(table)
       t = @tables[table]
 
-      t.needs(@column_data).each do |source, num|
+      t.needs(@column_data).each do |source_id, num|
         # If row cannot be created, needs are unfulfillable, so bail
         if space_left(table) < num
           raise(RuntimeError, "Unable to fulfill requirements for " +
-            "#{source.name} due to dependency from #{table}")
+            "#{table} due to dependency on #{source_id.table}")
         end
 
         num.times do
-          p source
-          p @tables[source]
-          @tables[source].generate
+          generate_for(source_id.table)
         end
       end
     end

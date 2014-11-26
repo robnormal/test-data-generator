@@ -75,12 +75,10 @@ module TestDataGenerator
       gen = @db.create_belongs_to(col)
       @table2.add!(Column.new(:depends, gen))
 
-      @db.generate!
-
       expect { 
         @db.reset!
         @db.generate!
-        [@db.data[:table1].length, @db.data[:table2].length]
+        [@db.data[:table1][:col1].length, @db.data[:table2][:depends].length]
       }.to eventually be == [1, 1]
     end
   end

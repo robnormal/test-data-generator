@@ -16,12 +16,8 @@ module TestDataGenerator
     # [name] name of this column
     # [generator] Generator used by this Column
     def initialize(name, generator)
-      if generator.is_a? Generator
-        @generator = generator
-        @name = name.to_sym
-      else
-        raise ArgumentError, "Argument 3 for Column.new must be a Generator"
-      end
+      @generator = generator
+      @name = name.to_sym
     end
 
     # [table] Table this Column will belong to
