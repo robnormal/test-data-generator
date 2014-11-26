@@ -48,15 +48,6 @@ module TestDataGenerator
         end
       end
 
-      describe 'when type is :belongs_to' do
-        it 'creates DependentColumnStub with dependency on the given column' do
-          col1 = DependentColumnStub.new(:nomen, :BelongsToGenerator, [[]])
-          col = Column.from_spec(:foreign, :belongs_to, [:target, :id])
-
-          expect(col.name).to be(:foreign)
-        end
-      end
-
       describe 'when "unique" option is true' do
         it 'produces a UniqueGenerator' do
           col = Column.from_spec(:surname, :number, [min: 1, max: 10], unique: true)

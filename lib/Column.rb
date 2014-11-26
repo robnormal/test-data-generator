@@ -39,15 +39,6 @@ module TestDataGenerator
         type = :datetime
       end
 
-      if type == :belongs_to
-        foreign_table  = args[0].to_sym
-        foreign_column = args[1].to_sym
-
-        return DependentColumnStub.new(
-          name.to_sym, BelongsToGenerator, [[foreign_table, foreign_column]]
-        )
-      end
-
       case type
       when :string
         generator = StringGenerator.new(*args)
