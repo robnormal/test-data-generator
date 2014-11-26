@@ -200,14 +200,15 @@ module TestDataGenerator
   class BelongsToGenerator
     include Generator
 
-    # @param col_accum [Accumulator] Accumulator for Column this generator points to
-    def initialize(database, column_id)
-      @db = database
+    # @param column_data [ColumnData]
+    # @param column_id [ColumnId]
+    def initialize(column_data, column_id)
+      @cd = column_data
       @column = column_id
     end
 
     def generate
-      @db.data_for(@column).sample
+      @cd.data_for(@column).sample
     end
 
     def dependencies
@@ -218,7 +219,6 @@ module TestDataGenerator
   class UniqueBelongsToGenerator < BelongsToGenerator
     include UniqueGenerator
 
-    # @param
     def initialize(column_data, column_id, data_store = [])
       @cd = column_data
       @column = column_id

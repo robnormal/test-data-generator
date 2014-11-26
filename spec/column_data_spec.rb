@@ -1,5 +1,6 @@
 require "rspec"
 require_relative "../lib/column_data"
+require_relative "../lib/dependency"
 
 module TestDataGenerator
   describe ColumnData do

@@ -1,6 +1,8 @@
 require "rspec"
 require_relative "eventually"
 require_relative "../lib/data_generators"
+require_relative "../lib/column_data"
+require_relative "../lib/dependency"
 
 
 module TestDataGenerator
