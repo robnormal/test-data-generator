@@ -1,6 +1,15 @@
 require "rspec"
 require_relative "../lib/Table.rb"
 
+def gen_stub
+  col = TestDataGenerator::ColumnId.new(:table1, :column1)
+  double('Generator',
+    generate: 'hello',
+    dependencies: [col],
+    needs: [[col, 1]]
+  )
+end
+
 def col_stub
   col = double('Column',
     name: :stub,
@@ -92,6 +101,20 @@ module TestDataGenerator
       expect(tbl.dependencies_as_edges[0].to).to eq(ColumnId.new(:table1, :column1))
     end
   end
-end
 
+  describe :needs do
+    it 'returns which data must be generated before we can make one row' do
+      tbl = Table.new 'test'
+      tbl.add! Column.new(:depends, gen_stub)
+
+      # empty table being pointed to
+      cd = ColumnData.new({ table1: { column1: [] } })
+
+      p tbl.needs(cd)
+      column, num_needed = tbl.needs(cd).first
+      expect(column).to eq(ColumnId.new(:table1, :column1))
+      expect(num_needed).to be 1
+    end 
+  end
+end
 

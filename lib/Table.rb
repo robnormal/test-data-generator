@@ -42,8 +42,10 @@ module TestDataGenerator
       @columns.map(&:dependencies).flatten
     end
 
-    def needs(db)
-      @columns.values.map { |c| c.needs db }.flatten
+    def needs(column_data)
+      @columns.values.inject([]) { |memo, c|
+        memo + (c.needs column_data)
+      }
     end
 
     def dependencies_as_edges
