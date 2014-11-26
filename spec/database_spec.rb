@@ -62,15 +62,19 @@ module TestDataGenerator
 
     # Database must produce BelongsToGenerator for you...
     describe :create_belongs_to do
-      it 'returns a new Column that BelongsTo given column' do
-        belongs = @db.create_belongs_to(:belongs, :table1, :col1)
+      it 'returns a new BelongsToGenerator pointing to given column' do
+        col = ColumnId.new(:table1, :col1)
+        gen = @db.create_belongs_to(col)
+        expect(gen).to be_a(BelongsToGenerator)
+        expect(gen.dependencies).to be == [col]
       end
     end
 
     it 'fills data as needed by dependent columns' do
-      belongs = @db.create_belongs_to(:belongs, :table1, :col1)
-      @table2.add! belongs
-        
+      col = ColumnId.new(:table1, :col1)
+      gen = @db.create_belongs_to(col)
+      @table2.add!(Column.new(:depends, gen))
+
       @db.generate!
 
       expect { 

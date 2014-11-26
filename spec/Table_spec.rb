@@ -110,7 +110,6 @@ module TestDataGenerator
       # empty table being pointed to
       cd = ColumnData.new({ table1: { column1: [] } })
 
-      p tbl.needs(cd)
       column, num_needed = tbl.needs(cd).first
       expect(column).to eq(ColumnId.new(:table1, :column1))
       expect(num_needed).to be 1

@@ -66,6 +66,9 @@ module TestDataGenerator
       end
     end
 
+    def create_belongs_to(column)
+      BelongsToGenerator.new(@column_data, column)
+    end
 
     private
 
@@ -90,6 +93,8 @@ module TestDataGenerator
         end
 
         num.times do
+          p source
+          p @tables[source]
           @tables[source].generate
         end
       end
