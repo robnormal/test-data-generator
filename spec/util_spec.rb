@@ -101,6 +101,32 @@ describe "util" do
       expect(rand_between(1, 1)).to eq(1)
     end
   end
+
+  describe :hash_subset do
+    it 'copies only specified keys to a new hash' do
+      h = { a: 3, b: 2 }
+
+      expect(hash_subset(h, [:a]).length).to be 1
+      expect(hash_subset(h, [:a])[:a]).to be 3
+    end
+  end
+
+  describe :fmap do
+    it 'maps a block over a Hash in the natural way' do
+      h = { a: 'aaa', b: 'bbbb' }
+      len = fmap(h, &:length)
+
+      expect(len[:a]).to be 3
+      expect(len[:b]).to be 4
+    end
+
+    it 'maps other things using &:map' do
+      len = fmap(['aa', 'bbbb'], &:length)
+
+      expect(len[0]).to be 2
+      expect(len[1]).to be 4
+    end
+  end
 end
 
 

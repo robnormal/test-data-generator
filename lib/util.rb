@@ -66,7 +66,19 @@ class Maybe
 end
 
 def hash_subset(hash, keys)
-  keys.inject({}) { |h, k| h[k] = hash[k] }
+  h = {}
+  keys.each { |k| h[k] = hash[k] }
+  h
+end
+
+def fmap(obj, &blk)
+  if obj.is_a? Hash
+    h = {}
+    obj.each { |k, v| h[k] = blk.call(v) }
+    h
+  else
+    obj.map(&blk)
+  end
 end
 
 # choose random element from an Enumerable
