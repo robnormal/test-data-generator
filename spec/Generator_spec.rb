@@ -1,22 +1,6 @@
 require "rspec"
 require_relative "eventually"
 require_relative "../lib/data_generators"
-require_relative "../lib/Table"
-
-def db_stub(example, column_data)
-  # stub database
-  db = instance_double('Datebase')
-  foreign = TestDataGenerator::ColumnId.new(:users, :id)
-
-  db_stub_set_data(db, foreign, column_data)
-
-  [db, foreign]
-end
-
-def db_stub_set_data(stub, foreign, data) 
-  allow(stub).to receive(:data_for).with(foreign)
-    .and_return(data)
-end
 
 
 module TestDataGenerator
@@ -205,65 +189,87 @@ module TestDataGenerator
     end
   end
 
-  describe BelongsToGenerator do
-    it 'selects data from a column in a Database' do
-      db, foreign = *db_stub(self, [2,3,4])
+  context "BelongsTo" do
+    before :example do
+      def setup_belongs(data)
+        @data = data
+        @column_data = ColumnData.new({ users: { id: @data } })
+        @foreign = ColumnId.new(:users, :id)
+        @belongs = BelongsToGenerator.new(@column_data, @foreign)
+        @unique = UniqueBelongsToGenerator.new(@column_data, @foreign)
+      end
 
-      belongs = BelongsToGenerator.new(db, foreign)
-      expect { belongs.generate }.to eventually be 2
-    end
-
-    it 'always uses the current data' do
-      # stub database
-      db, foreign = *db_stub(self, [1])
-
-      belongs = BelongsToGenerator.new(db, foreign)
-      expect(belongs.generate).to be 1
-
-      db_stub_set_data(db, foreign, [2])
-
-      expect(belongs.generate).to be 2
-    end
-
-    describe :dependencies do
-      it 'reports the ColumnId of the column it depends on' do
-        db, foreign = *db_stub(self, [1])
-
-        belongs = BelongsToGenerator.new(db, foreign)
-        dep = belongs.dependencies.first
-        expect(dep.table).to eq(:users)
-        expect(dep.column).to eq(:id)
+      def set_data(data)
+        @data.replace(data)
       end
     end
-  end
 
-  describe UniqueBelongsToGenerator do
-    it 'selects unique data from a column in a Database' do
-      belongs = UniqueBelongsToGenerator.new(*db_stub(self, [2,3,4]))
+    describe BelongsToGenerator do
+      it 'selects data from a column in a Database' do
+        setup_belongs([2,3,4])
+        expect { @belongs.generate }.to eventually be 2
+      end
 
-      expect(belongs.iterate 3).to contain_exactly(2, 3, 4)
+      it 'always uses the current data' do
+        setup_belongs([1])
+        expect(@belongs.generate).to be 1
+
+        set_data([2])
+        expect(@belongs.generate).to be 2
+      end
+
+      describe :dependencies do
+        it 'reports the ColumnId of the column it depends on' do
+          setup_belongs([1])
+
+          dep = @belongs.dependencies.first
+          expect(dep.table).to eq(:users)
+          expect(dep.column).to eq(:id)
+        end
+      end
+
+      describe :needs do
+        it 'returns request for 1 value of column it depends on, if that column is empty' do
+          setup_belongs([])
+
+          column, num_needed = @belongs.needs(@column_data).first
+          expect(num_needed).to be 1
+        end
+
+        it 'returns empty Array if column has data' do
+          setup_belongs([8])
+
+          expect(@belongs.needs(@column_data)).to be_empty
+        end
+      end
     end
 
-    it "knows when it's empty" do
-      belongs = UniqueBelongsToGenerator.new(*db_stub(self, [2,3,4]))
-      belongs.iterate 3
-      expect(belongs.empty?).to be true
-    end
+    describe UniqueBelongsToGenerator do
+      it 'selects unique data from a column in a Database' do
+        setup_belongs([2,3,4,5,6,7])
+        expect(@unique.iterate 6).to contain_exactly(2,3,4,5,6,7)
+      end
 
-    it 'stays up-to-date with column data, without reusing old data' do
-      db, foreign = *db_stub(self, [3,4,5])
-      belongs = UniqueBelongsToGenerator.new(db, foreign)
-      belongs.iterate 3
+      it "knows when it's empty" do
+        setup_belongs([2,3,4,5,6,7])
+        @unique.iterate 6
+        expect(@unique.empty?).to be true
+      end
 
-      # new data gets added to column...
-      db_stub_set_data(db, foreign, [3,4,5,9])
+      it 'stays up-to-date with column data, without reusing old data' do
+        setup_belongs([3,4,5])
+        @unique.iterate 3
 
-      expect(belongs.generate).to be 9
-    end
+        # new data gets added to column...
+        set_data([3,4,5,9])
 
-    it 'raises error if asked for more data than the column has' do
-      db, foreign = *db_stub(self, [0, 1])
-      expect { uniq.iterate 3 }.to raise_error
+        expect(@unique.generate).to be 9
+      end
+
+      it 'raises error if asked for more data than the column has' do
+        setup_belongs([0,1])
+        expect { @unique.iterate 3 }.to raise_error
+      end
     end
   end
 end

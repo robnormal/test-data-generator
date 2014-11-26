@@ -219,8 +219,8 @@ module TestDataGenerator
     include UniqueGenerator
 
     # @param
-    def initialize(database, column_id, data_store = [])
-      @db = database
+    def initialize(column_data, column_id, data_store = [])
+      @cd = column_data
       @column = column_id
       @data_store = data_store
       reset!
@@ -237,22 +237,18 @@ module TestDataGenerator
     end
 
     def reset!
-      @unused = @db.data_for @column
+      @unused = @cd.data_for @column
       @grabbed = @unused.length
     end
 
     protected
     def next_value
-      key = rand(@unused.length)
-      value = @unused[key]
-      @unused.delete_at key
-
-      value
+      @unused.delete_at(rand @unused.length)
     end
 
     private
     def update_unused
-      data = @db.data_for @column
+      data = @cd.data_for @column
       @unused += data.drop @grabbed
       @grabbed = data.length
     end
