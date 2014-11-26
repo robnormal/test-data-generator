@@ -1,6 +1,6 @@
-require_relative('data_generators.rb')
-require_relative('Table.rb')
-require_relative('weighted_picker.rb')
+require_relative 'Table'
+require_relative 'weighted_picker'
+require_relative 'directed_graph'
 
 module TestDataGenerator
   class Database
@@ -48,12 +48,13 @@ module TestDataGenerator
       @data[column_id.table] && @data[column_id.table][column_id.column_id]
     end
 
+
     private
 
     def dependency_graph
       if @dep_graph.nil?
         @dep_graph = DirectedGraph.new(
-          @tables.map(&:dependencies_as_edges).flatten
+          @tables.map { |k, table| table.dependencies_as_edges }.flatten
         )
       end
 
@@ -75,12 +76,11 @@ module TestDataGenerator
       t.needs(@data).each do |source, num|
         # If row cannot be created, needs are unfulfillable, so bail
         if space_left(table) < num
-          raise(RuntimeError, "Unable to fulfill requirements for "
-            "#{source.name} due to dependency from #{table}"
-          )
+          raise(RuntimeError, "Unable to fulfill requirements for " +
+            "#{source.name} due to dependency from #{table}")
         end
 
-        store_rows(table, t.iterate num)
+        store_rows(table, t.iterate(num))
       end
     end
 
