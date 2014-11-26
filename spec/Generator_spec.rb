@@ -224,6 +224,17 @@ module TestDataGenerator
 
       expect(belongs.generate).to be 2
     end
+
+    describe :dependencies do
+      it 'reports the ColumnId of the column it depends on' do
+        db, foreign = *db_stub(self, [1])
+
+        belongs = BelongsToGenerator.new(db, foreign)
+        dep = belongs.dependencies.first
+        expect(dep.table).to eq(:users)
+        expect(dep.column).to eq(:id)
+      end
+    end
   end
 
   describe UniqueBelongsToGenerator do

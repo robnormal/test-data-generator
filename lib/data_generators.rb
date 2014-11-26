@@ -209,9 +209,13 @@ module TestDataGenerator
     def generate
       @db.data_for(@column).sample
     end
+
+    def dependencies
+      [@column]
+    end
   end
 
-  class UniqueBelongsToGenerator
+  class UniqueBelongsToGenerator < BelongsToGenerator
     include UniqueGenerator
 
     # @param
@@ -222,6 +226,12 @@ module TestDataGenerator
       reset!
     end
 
+    # must update @unused before checking for empty
+    def generate
+      update_unused
+      super
+    end
+
     def empty?
       @unused.empty?
     end
@@ -229,12 +239,6 @@ module TestDataGenerator
     def reset!
       @unused = @db.data_for @column
       @grabbed = @unused.length
-    end
-
-    # must update @unused before checking for empty
-    def generate
-      update_unused
-      super
     end
 
     protected
