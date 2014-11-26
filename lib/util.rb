@@ -18,8 +18,15 @@ class Maybe
     end
   end
 
+  # true if both are nothing, or if both contain same value
   def ==(m)
-    (nothing? && m.nothing?) || (from_just == m.from_just)
+    if nothing?
+      m.nothing?
+    elsif m.nothing?
+      false
+    else
+      from_just == m.from_just
+    end
   end
 
   def fmap(&blk)

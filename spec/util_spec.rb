@@ -48,6 +48,8 @@ describe "util" do
       it 'compares Maybes in the obvious way' do
         expect(Maybe.nothing).to eq(Maybe.nothing)
         expect(Maybe.just(8)).to eq(Maybe.just(8))
+        expect(Maybe.nothing).not_to eq(Maybe.just(8))
+        expect(Maybe.just(8)).not_to eq(Maybe.nothing)
       end
     end
 
