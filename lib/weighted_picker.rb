@@ -2,10 +2,13 @@ module TestDataGenerator
   class WeigtedPicker
     # @param weights [Hash{Object => Numeric}]
     def initialize(weights)
+      raise(ArgumentError, 'no weights given') if weights.empty?
+
       @weights = weights
 
       # we check a random number against @thresholds to pick element
       @thresholds = []
+
       thresh = 0
       @weights.each do |elem, weight|
         thresh += weight

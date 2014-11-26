@@ -11,18 +11,22 @@ module TestDataGenerator
       @current = 0
     end
 
-    def gen
+    def generate
       @current += 1
     end
   end
 
   describe Database do
+    before :example do
+      @table = Table.new(:table)
+    end
+    
     it 'has String attribute "name"' do
-      expect(Database.new('dummy', []).name).to eq('dummy')
+      expect(Database.new('dummy', {@table => 1}).name).to eq('dummy')
     end
 
     it 'has Hash attribute "data"' do
-      expect(Database.new('dummy', []).data).to be_a(Hash)
+      expect(Database.new('dummy', {@table => 1}).data).to be_a(Hash)
     end
 
     describe :initialize do
@@ -39,7 +43,7 @@ module TestDataGenerator
         db.generate_all!
 
         expect(db.data[:table1]).to be_a(Array)
-        expect(db.data[:table1]).to contain_exactly(0, 1, 2)
+        expect(db.data[:table1]).to contain_exactly(1, 2, 3)
       end
     end
   end

@@ -1,6 +1,7 @@
 require_relative 'Table'
 require_relative 'weighted_picker'
 require_relative 'directed_graph'
+require_relative 'util'
 
 module TestDataGenerator
   class Database
@@ -18,6 +19,7 @@ module TestDataGenerator
       table_limits.each do |table, limit|
         @tables[table.name] = table
         @limits[table.name] = limit
+        @data[table.name] = []
       end
 
       if dependency_graph.has_cycles?
@@ -29,19 +31,14 @@ module TestDataGenerator
 
     def generate!
       # pick table at random (weighted odds), and return what it generates
-      table = @table_picker.pick
-
-      # if no table was picked, we're out of stuff to generate
-      if table.nil?
-        false
-      else
+      @table_picker.fmap(&:pick).fmap do |table|
         fulfill_needs table
         row table
       end
     end
 
     def generate_all!
-      until generate!.nil?; end
+      until generate!.nothing?; end
     end
 
     def data_for(column_id)
@@ -89,7 +86,11 @@ module TestDataGenerator
     end
 
     def create_thresholds
-      @table_picker = WeigtedPicker.new(@limits)
+      if @limits.empty?
+        @table_picker = Maybe.nothing
+      else
+        @table_picker = Maybe.just WeigtedPicker.new(@limits)
+      end
     end
 
     # stop generating rows if table is full
