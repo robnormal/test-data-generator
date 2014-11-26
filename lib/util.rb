@@ -88,6 +88,12 @@ def fmap(obj, &blk)
   end
 end
 
+def fmap_with_keys(obj, &blk)
+  h = {}
+  obj.each { |k, v| h[k] = blk.call(k, v) }
+  h
+end
+
 # choose random element from an Enumerable
 def rand_in(xs)
   xs.to_a.sample

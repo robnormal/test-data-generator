@@ -129,6 +129,17 @@ describe "util" do
       expect(len[1]).to be 4
     end
   end
+
+  describe :fmap_with_keys do
+    it 'treats Hashes like fmap, but passes the key as well as the value to the block' do
+      h = { a: 3, b: 4 }
+      repeats = fmap_with_keys(h) { |k, v|
+        v.to_enum(:times).inject('') { |s| s + k }
+      }
+
+      expect(repeats[:a]).to be 'aaa'
+      expect(repeats[:b]).to be 'bbbb'
+    end
 end
 
 
