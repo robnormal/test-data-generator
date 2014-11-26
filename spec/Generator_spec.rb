@@ -24,7 +24,7 @@ end
 def db_stub(example, column_data)
   # stub database
   db = instance_double('Datebase')
-  foreign = ColumnId.new(:users, :id)
+  foreign = TestDataGenerator::ColumnId.new(:users, :id)
 
   db_stub_set_data(db, foreign, column_data)
 

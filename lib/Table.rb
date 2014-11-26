@@ -41,18 +41,15 @@ module TestDataGenerator
     end
 
     def needs(db)
-      @columns.map { |c| c.needs db }.flatten
+      @columns.values.map { |c| c.needs db }.flatten
     end
 
     def dependencies_as_edges
-      @columns.map { |c|
-        c.dependencies.map { |d| [[@name, c.name], [d.table, d.column]] }
+      @columns.values.map { |c|
+        c.dependencies.map { |col_id|
+          DependencyEdge.new(ColumnId.new(@name, c.name), col_id)
+        }
       }.flatten
-    end
-
-    # Determine which Tables need to produce more rows before we can proceed,
-    # and how many rows we need
-    def needs(data)
     end
 
   end

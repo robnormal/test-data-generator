@@ -1,6 +1,13 @@
 require "rspec"
 require_relative "../lib/Table.rb"
 
+def col_stub
+  col = double('Column',
+    name: :stub,
+    dependencies: [TestDataGenerator::ColumnId.new(:table1, :column1)]
+  )
+end
+
 module TestDataGenerator
   describe Table do
     dummy = Table.new('dummy')
@@ -40,7 +47,7 @@ module TestDataGenerator
 
     describe :initialize do
       it 'accepts an array of column specs as the third argument' do
-        users = TestDataGenerator::Table.new 'users', [
+        users = Table.new 'users', [
           [:id],
           [:name, :forgery, [:name, :first_name]],
           [:title, :words, [2..4]],
@@ -57,6 +64,17 @@ module TestDataGenerator
       end
     end
 
+    describe
+  end
+
+  describe :dependencies_as_edges do
+    it 'returns all column dependencies, in the form [column_depending, column_source]' do
+      tbl = Table.new 'test'
+      tbl.add! col_stub
+
+      expect(tbl.dependencies_as_edges[0].from).to eq(ColumnId.new(:test, :stub))
+      expect(tbl.dependencies_as_edges[0].to).to eq(ColumnId.new(:table1, :column1))
+    end
   end
 end
 
