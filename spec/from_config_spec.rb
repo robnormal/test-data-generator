@@ -20,7 +20,12 @@ module TestDataGenerator
       expect(@storage).to be_a(ColumnwiseStorage)
     end
 
-    it 'defines tables in a database, whose names are the keys in the config' do
+    it 'produces data for tables whose names are the keys in the config' do
+      @storage.generate!
+      data = @storage.offload_all!
+
+      expect(data[:authors]).to be_a(Array)
+      expect(data[:books]).to be_a(Array)
     end
   end
 end

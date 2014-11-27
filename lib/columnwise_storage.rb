@@ -7,7 +7,7 @@ module TestDataGenerator
     def initialize(db, table_limits)
       @db = db
       @limits = table_limits
-      @categories = db.table_names
+      @categories = table_limits.keys
 
       create_thresholds
       reset!
@@ -46,7 +46,7 @@ module TestDataGenerator
       check_category category
 
       columns = @data[category].values
-      len = columns.first.length # height of data
+      len = columns.first ? columns.first.length : 0 # height of data
 
       len.times do
         yield columns.map(&:shift)
@@ -72,7 +72,7 @@ module TestDataGenerator
 
     def check_category(cat)
       if @data[cat].nil?
-        raise(ArgumentError, "No such category: #{cat}")
+        raise(ArgumentError, "No such table: #{cat}")
       end
     end
 

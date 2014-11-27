@@ -11,11 +11,15 @@ module TestDataGenerator
       db_cfg.each do |table, table_cfg|
         rows, columns_cfg = *table_cfg
 
-        columns_cfg.each do |col_cfg|
-        end
+        db.add_table! Table.new(table, self.columns_from_config(table_cfg))
       end
 
       storage
+    end
+
+    def self.columns_from_config(cfg)
+      name, type, args, options = *cfg
+      []
     end
 
   end
