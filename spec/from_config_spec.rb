@@ -14,6 +14,11 @@ module TestDataGenerator
       }
 
       @db = TestDataGenerator.from_config(@config)
+
+      @get_data = -> do
+        @db.generate_all!
+        @db.offload_all!
+      end
     end
 
     it 'returns Database' do
@@ -21,11 +26,17 @@ module TestDataGenerator
     end
 
     it 'produces data for tables whose names are the keys in the config' do
-      @db.generate!
-      data = @db.offload_all!
+      data = @get_data.call
 
       expect(data[:authors]).to be_a(Array)
       expect(data[:books]).to be_a(Array)
+    end
+
+    it 'produces number of rows for each table as given in the config' do
+      data = @get_data.call
+
+      expect(data[:authors].length).to eq(3)
+      expect(data[:books].length).to eq(5)
     end
   end
 end
