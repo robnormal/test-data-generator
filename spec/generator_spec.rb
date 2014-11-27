@@ -1,5 +1,6 @@
 require "rspec"
 require_relative "eventually"
+require_relative "shared"
 require_relative "../lib/database"
 require_relative "../lib/dependency"
 
@@ -203,37 +204,10 @@ module TestDataGenerator
   end
 
   context "BelongsTo" do
-    before :example do
-      def setup_belongs(data)
-        @refs = {}
-        reset_gen data
-
-        @id = Column.new(:id, SimpleGenerator.new(@refs))
-
-        @users = Table.new(:users)
-        @users.add! @id
-        @db = Database.new({ @users => 10 })
-
-        @foreign = ColumnId.new(:users, :id)
-        @belongs = BelongsToGenerator.new(@db, @foreign)
-        @unique = UniqueBelongsToGenerator.new(@db, @foreign)
-
-        set_data(data)
-      end
-
-      def reset_gen(data)
-        @refs[:data] = data
-        @refs[:counter] = -1
-      end
-
-      def set_data(data)
-        @db.reset!
-        reset_gen(data)
-        data.length.times { @db.generate! }
-      end
-    end
+    include TestFixtures
 
     describe BelongsToGenerator do
+
       it 'selects data from a column in a Database' do
         setup_belongs([2,3,4])
         expect { @belongs.generate }.to eventually be 2
@@ -243,7 +217,7 @@ module TestDataGenerator
         setup_belongs([1])
         expect(@belongs.generate).to eq(1)
 
-        set_data([2])
+        set_belongs_data([2])
         expect(@belongs.generate).to eq(2)
       end
 
@@ -290,7 +264,7 @@ module TestDataGenerator
         @unique.iterate 3
 
         # new data gets added to column...
-        set_data([3,4,5,9])
+        set_belongs_data([3,4,5,9])
 
         expect(@unique.generate).to be 9
       end
