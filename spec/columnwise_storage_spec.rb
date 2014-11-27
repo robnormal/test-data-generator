@@ -1,6 +1,5 @@
 require "rspec"
 require_relative "eventually"
-require_relative "../lib/columnwise_storage"
 require_relative "../lib/dependency"
 require_relative "../lib/database"
 
@@ -19,7 +18,7 @@ module TestDataGenerator
     end
   end
 
-  describe ColumnwiseStorage do
+  describe Database do
     before :example do
       @table1 = Table.new(:table1)
       @table2 = Table.new(:table2)
@@ -29,7 +28,7 @@ module TestDataGenerator
       @table1.add! @col1
       @table2.add! @col2
 
-      @storage = ColumnwiseStorage.new({ @table1 => 3, @table2 => 5 })
+      @storage = Database.new({ @table1 => 3, @table2 => 5 })
     end
 
     describe :generate! do
@@ -50,7 +49,7 @@ module TestDataGenerator
 
     describe :add_table! do
       it 'adds a table to the database' do
-        storage = ColumnwiseStorage.new
+        storage = Database.new
         storage.add_table!(@table1, 3)
 
         expect { storage.height :table1 }.not_to raise_error

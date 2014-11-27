@@ -2,7 +2,7 @@ require_relative "util"
 require_relative 'weighted_picker'
 
 module TestDataGenerator
-  class ColumnwiseStorage
+  class Database
     # @param [Database]
     def initialize(tables_limits = {})
       @tables = {}

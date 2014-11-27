@@ -13,16 +13,16 @@ module TestDataGenerator
         ]]
       }
 
-      @storage = TestDataGenerator.from_config(@config)
+      @db = TestDataGenerator.from_config(@config)
     end
 
-    it 'returns ColumnwiseStorage' do
-      expect(@storage).to be_a(ColumnwiseStorage)
+    it 'returns Database' do
+      expect(@db).to be_a(Database)
     end
 
     it 'produces data for tables whose names are the keys in the config' do
-      @storage.generate!
-      data = @storage.offload_all!
+      @db.generate!
+      data = @db.offload_all!
 
       expect(data[:authors]).to be_a(Array)
       expect(data[:books]).to be_a(Array)

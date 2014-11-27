@@ -18,8 +18,8 @@ module TestDataGenerator
     # Default implementation assumes we only need one row per
     # dependency
     #
-    # @param ColumnwiseStorage
-    #   ColumnwiseStorage containing data for depended-on columns
+    # @param Database
+    #   Database containing data for depended-on columns
     # @return [Array<Array(ColumnId, Integer)>]
     def needs(column_data)
       needed = []
