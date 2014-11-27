@@ -1,6 +1,6 @@
-require_relative('lib/database')
+require_relative 'test_data_generator'
 
-a = TestDataGenerator::Database.from_spec 'publishing', {
+a = TestDataGenerator::from_config 'publishing', {
   authors: [3, [
     [:id],
     [:first_name, :forgery, [:name, :first_name]],
@@ -23,5 +23,6 @@ a = TestDataGenerator::Database.from_spec 'publishing', {
   ]]
 }
 
-[a,b,c].each { |t| t.each { |row| p row } }
+a.generate_all!
+p a.offload_all!
 
