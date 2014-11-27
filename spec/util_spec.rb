@@ -140,6 +140,7 @@ describe "util" do
       expect(repeats[:a]).to be 'aaa'
       expect(repeats[:b]).to be 'bbbb'
     end
+  end
 end
 
 
