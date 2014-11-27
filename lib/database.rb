@@ -57,11 +57,11 @@ module TestDataGenerator
     def offload!(category)
       check_category category
 
-      columns = @data[category].values
-      len = columns.first ? columns.first.length : 0 # height of data
+      columns = @data[category]
+      len = height category
 
       len.times do
-        yield columns.map(&:shift)
+        yield fmap(columns, &:shift)
       end
     end
 

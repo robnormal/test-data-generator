@@ -105,7 +105,7 @@ module TestDataGenerator
         end
 
         expect(table1.length).to eq(3)
-        expect(table1).to contain_exactly([1], [2], [3])
+        expect(table1[1][:col1]).to eq(2)
       end
     end
 
@@ -116,9 +116,9 @@ module TestDataGenerator
         data = @storage.offload_all!
 
         expect(data[:table1].length).to eq(3)
-        expect(data[:table1]).to contain_exactly([1], [2], [3])
+        expect(data[:table1][1][:col1]).to eq(2)
         expect(data[:table2].length).to eq(5)
-        expect(data[:table2]).to contain_exactly([1], [2], [3], [4], [5])
+        expect(data[:table2][3][:col2]).to eq(4)
       end
     end
 

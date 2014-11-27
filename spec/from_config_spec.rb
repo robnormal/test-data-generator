@@ -38,5 +38,12 @@ module TestDataGenerator
       expect(data[:authors].length).to eq(3)
       expect(data[:books].length).to eq(5)
     end
+
+    it 'creates a row as Hash{ columnname => datum }' do
+      data = @get_data.call
+
+      expect(data[:authors].first).to be_a(Hash)
+      expect(data[:authors].first[:name]).to be_a(String)
+    end
   end
 end
