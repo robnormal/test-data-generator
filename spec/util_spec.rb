@@ -134,11 +134,11 @@ describe "util" do
     it 'treats Hashes like fmap, but passes the key as well as the value to the block' do
       h = { a: 3, b: 4 }
       repeats = fmap_with_keys(h) { |k, v|
-        v.to_enum(:times).inject('') { |s| s + k }
+        v.downto(1).inject('') { |s| s + k.to_s }
       }
 
-      expect(repeats[:a]).to be 'aaa'
-      expect(repeats[:b]).to be 'bbbb'
+      expect(repeats[:a]).to eq('aaa')
+      expect(repeats[:b]).to eq('bbbb')
     end
   end
 end
