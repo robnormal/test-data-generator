@@ -29,7 +29,7 @@ module TestDataGenerator
       @table1.add! @col1
       @table2.add! @col2
 
-      @db = Database.new('db', [@table1, @table2])
+      @db = Database.new([@table1, @table2])
 
       @storage = ColumnwiseStorage.new(@db, { table1: 3, table2: 5 })
     end

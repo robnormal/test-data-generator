@@ -28,11 +28,7 @@ module TestDataGenerator
       @table1.add! @col1
       @table2.add! @col2
 
-      @db = Database.new('db', [@table1, @table2])
-    end
-    
-    it 'has String attribute "name"' do
-      expect(@db.name).to eq('db')
+      @db = Database.new([@table1, @table2])
     end
 
     it 'has Array attribute "table_names"' do
@@ -60,7 +56,7 @@ module TestDataGenerator
 
     describe :add_table! do
       it 'adds a table to the database' do
-        @db = Database.new('empty', [])
+        @db = Database.new([])
         @db.add_table!(@table1)
 
         expect(@db.table_names).to eq([:table1])

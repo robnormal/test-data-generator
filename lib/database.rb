@@ -6,13 +6,12 @@ module TestDataGenerator
   # represents an entire database worth of data
   # acts as a Mediator between different Tables and Columns
   class Database
-    attr_reader :name, :table_names
+    attr_reader :table_names
 
     # @param name [String]
     # @param table_limits [Hash{Table => Integer}]
     #   Tables with the total number of entries to be generated for them
-    def initialize(name, tables)
-      @name = name
+    def initialize(tables)
       @tables = {}
       @table_names = []
 
