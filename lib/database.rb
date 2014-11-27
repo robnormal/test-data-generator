@@ -17,13 +17,10 @@ module TestDataGenerator
       @table_names = []
 
       tables.each do |table|
-        @tables[table.name] = table
-        @table_names << table.name
+        add_table_no_check! table
       end
 
-      if dependency_graph.has_cycles?
-        raise(ArgumentError, 'tables have circular dependencies')
-      end
+      check_dependencies
     end
 
     def generate_for(table)
@@ -36,7 +33,17 @@ module TestDataGenerator
       @tables[table].needs(data)
     end
 
+    def add_table!(table)
+      add_table_no_check!(table)
+      check_dependencies
+    end
+
     private
+
+    def add_table_no_check!(table)
+      @tables[table.name] = table
+      @table_names << table.name
+    end
 
     def check_table(tbl)
       if @tables[tbl].nil?
@@ -52,6 +59,12 @@ module TestDataGenerator
       end
 
       @dep_graph
+    end
+
+    def check_dependencies
+      if dependency_graph.has_cycles?
+        raise(ArgumentError, 'tables have circular dependencies')
+      end
     end
   end
 end

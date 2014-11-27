@@ -58,6 +58,15 @@ module TestDataGenerator
       end
     end
 
+    describe :add_table! do
+      it 'adds a table to the database' do
+        @db = Database.new('empty', [])
+        @db.add_table!(@table1)
+
+        expect(@db.table_names).to eq([:table1])
+      end
+    end
+
   end
 end
 
