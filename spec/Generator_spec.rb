@@ -213,8 +213,7 @@ module TestDataGenerator
 
         @users = Table.new(:users)
         @users.add! @id
-        @db = Database.new([@users])
-        @storage = ColumnwiseStorage.new(@db, { users: 10 })
+        @storage = ColumnwiseStorage.new({ @users => 10 })
 
         @foreign = ColumnId.new(:users, :id)
         @belongs = BelongsToGenerator.new(@storage, @foreign)

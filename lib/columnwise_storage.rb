@@ -4,13 +4,22 @@ require_relative 'weighted_picker'
 module TestDataGenerator
   class ColumnwiseStorage
     # @param [Database]
-    def initialize(db, table_limits)
-      @db = db
-      @limits = table_limits
-      @categories = table_limits.keys
+    def initialize(tables_limits = {})
+      @tables = {}
+      @limits = {}
+      add_tables! tables_limits
+    end
 
-      create_thresholds
-      reset!
+    def add_table!(table, limit)
+      add_table_raw!(table, limit)
+      update_table_data
+    end
+
+    def add_tables!(tables_limits)
+      tables_limits.each do |table, limit|
+        add_table_raw!(table, limit)
+      end
+      update_table_data
     end
 
     def retrieve(cat, subcat)
@@ -36,8 +45,11 @@ module TestDataGenerator
 
     def reset!
       @data = {}
-      @categories.each do |cat|
-        @data[cat] = {}
+      @tables.each do |name, table|
+        @data[name] = {}
+        table.column_names.each do
+          |col| @data[name][col] = []
+        end
       end
     end
 
@@ -51,6 +63,12 @@ module TestDataGenerator
       len.times do
         yield columns.map(&:shift)
       end
+    end
+
+    def columns(category)
+      check_category category
+
+      @data[category].first && @data[category].first.keys || []
     end
 
     def offload_all!
@@ -69,6 +87,16 @@ module TestDataGenerator
 
     private
 
+    def add_table_raw!(table, limit)
+      @tables[table.name] = table
+      @limits[table.name] = limit
+    end
+
+    def update_table_data
+      check_dependencies
+      create_thresholds
+      reset!
+    end
 
     def check_category(cat)
       if @data[cat].nil?
@@ -80,8 +108,7 @@ module TestDataGenerator
       check_category table
       fulfill_needs! table
 
-      @db.generate_for(table).each do |col, data|
-        @data[table][col] ||= []
+      @tables[table].generate.each do |col, data|
         @data[table][col] << data
       end
 
@@ -92,7 +119,7 @@ module TestDataGenerator
     end
 
     def fulfill_needs!(table)
-      @db.needs_for(table, self).each do |source_id, num|
+      @tables[table].needs(self).each do |source_id, num|
         # If row cannot be created, needs are unfulfillable, so bail
         if space_left(table) < num
           raise(RuntimeError, "Unable to fulfill requirements for " +
@@ -117,5 +144,22 @@ module TestDataGenerator
           Maybe.just(WeigtedPicker.new @limits)
         end
     end
+
+    def dependency_graph
+      if @dep_graph.nil?
+        @dep_graph = DirectedGraph.new(
+          @tables.map { |k, table| table.dependencies_as_edges }.flatten
+        )
+      end
+
+      @dep_graph
+    end
+
+    def check_dependencies
+      if dependency_graph.has_cycles?
+        raise(ArgumentError, 'tables have circular dependencies')
+      end
+    end
+
   end
 end

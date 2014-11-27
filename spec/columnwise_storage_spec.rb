@@ -29,23 +29,34 @@ module TestDataGenerator
       @table1.add! @col1
       @table2.add! @col2
 
-      @db = Database.new([@table1, @table2])
-
-      @storage = ColumnwiseStorage.new(@db, { table1: 3, table2: 5 })
+      @storage = ColumnwiseStorage.new({ @table1 => 3, @table2 => 5 })
     end
 
     describe :generate! do
-      it '' do
+      it "generates one row for a table of it's choosing" do
         @storage.generate!
+
         # should have on row total in @storage
         expect(@storage.height(:table1) + @storage.height(:table2)).to eq(1)
       end
     end
 
     describe :generate_all! do
-      it '' do
+      it 'generates all rows for all tables' do
         @storage.generate_all!
         expect(@storage.height(:table1)).to eq(3)
+      end
+    end
+
+    describe :add_table! do
+      it 'adds a table to the database' do
+        storage = ColumnwiseStorage.new
+        storage.add_table!(@table1, 3)
+
+        expect { storage.height :table1 }.not_to raise_error
+
+        storage.generate_all!
+        expect(storage.height :table1).to eq(3)
       end
     end
 

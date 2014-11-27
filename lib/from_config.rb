@@ -5,13 +5,13 @@ module TestDataGenerator
 
   module ConfigProcess
     def self.from_config(db_cfg)
-      db = Database.new([])
-      storage = ColumnwiseStorage.new(db, fmap(db_cfg, &:first))
+      storage = ColumnwiseStorage.new
 
       db_cfg.each do |table, table_cfg|
         rows, columns_cfg = *table_cfg
 
-        db.add_table! Table.new(table, self.columns_from_config(table_cfg))
+        tbl = Table.new(table, self.columns_from_config(table_cfg))
+        storage.add_table!(tbl, rows)
       end
 
       storage
