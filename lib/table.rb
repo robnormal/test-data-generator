@@ -7,16 +7,12 @@ module TestDataGenerator
 
     attr_reader :name, :column_names
 
-    def initialize(name, col_config = [])
+    def initialize(name, columns = [])
       @name          = name.to_sym
       @columns       = {}
       @column_names  = []
 
-      col_config.each do |cfg|
-        col_name, type, args, options = *cfg
-
-        add_from_spec!(col_name, type, args || [], options || {})
-      end
+      columns.each do |c| add!(c) end
     end
 
     def generate

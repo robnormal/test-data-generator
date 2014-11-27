@@ -86,20 +86,12 @@ module TestDataGenerator
     end
 
     describe :initialize do
-      it 'accepts an array of column specs as the third argument' do
-        users = Table.new 'users', [
-          [:id],
-          [:name, :forgery, [:name, :first_name]],
-          [:title, :words, [2..4]],
-          [:created_at]
-        ]
+      it 'accepts an array of columns as second argument' do
+        users = Table.new('users', [Column.new(:id, CountGenerator.new)])
 
         row = users.generate
 
         expect(row[:id]).to be_a(Fixnum)
-        expect(row[:name]).to be_a(String)
-        expect(row[:title]).to be_a(String)
-        expect(row[:created_at]).to be_a(Fixnum)
       end
     end
 
