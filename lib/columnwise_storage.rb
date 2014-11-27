@@ -14,6 +14,10 @@ module TestDataGenerator
       @data[cat][subcat] || []
     end
 
+    def retrieve_by_id(column_id)
+      retrieve(column_id.table, column_id.column)
+    end
+
     def append_row!(category, row)
       check_category(category)
 
@@ -50,7 +54,9 @@ module TestDataGenerator
     end
 
     def height(category)
-      @data[category].first[1].length
+      check_category(category)
+
+      @data[category].empty? ? 0 : @data[category].first[1].length
     end
 
     private

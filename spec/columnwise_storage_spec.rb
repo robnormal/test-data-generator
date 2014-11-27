@@ -1,5 +1,6 @@
 require "rspec"
 require_relative "../lib/columnwise_storage"
+require_relative "../lib/dependency"
 
 module TestDataGenerator
   describe ColumnwiseStorage do
@@ -22,6 +23,15 @@ module TestDataGenerator
             }.to raise_error(ArgumentError)
           end
         end
+      end
+    end
+
+    describe :retrieve_by_id do
+      it 'retrieves data by ColumnId' do
+        @data_store.append_row!(:b, { x: 8, y: 5 })
+        id = ColumnId.new(:b, :x)
+
+        expect(@data_store.retrieve_by_id(id)).to eq([8])
       end
     end
 
