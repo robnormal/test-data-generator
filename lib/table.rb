@@ -1,5 +1,5 @@
-require_relative('data_generators.rb')
-require_relative('Column.rb')
+require_relative('data_generators')
+require_relative('column')
 
 module TestDataGenerator
   class Table

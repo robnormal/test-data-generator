@@ -1,5 +1,5 @@
 require "rspec"
-require_relative "../lib/Table.rb"
+require_relative "../lib/table"
 
 def gen_stub
   col = TestDataGenerator::ColumnId.new(:table1, :column1)
@@ -18,6 +18,20 @@ def col_stub
 end
 
 module TestDataGenerator
+  # toy Generator class
+  class CountGenerator
+    include Generator
+    @current
+
+    def initialize
+      @current = 0
+    end
+
+    def generate
+      @current += 1
+    end
+  end
+
   describe Table do
     before :example do
       @dummy = Table.new('dummy')
@@ -107,10 +121,13 @@ module TestDataGenerator
       tbl = Table.new 'test'
       tbl.add! Column.new(:depends, gen_stub)
 
-      # empty table being pointed to
-      cd = ColumnData.new({ table1: { column1: [] } })
+      source = Table.new 'source'
+      source.add! Column.new(:id, CountGenerator.new)
 
-      column, num_needed = tbl.needs(cd).first
+      # empty table being pointed to
+      db = Database.new({ source => 3})
+
+      column, num_needed = tbl.needs(db).first
       expect(column).to eq(ColumnId.new(:table1, :column1))
       expect(num_needed).to be 1
     end 

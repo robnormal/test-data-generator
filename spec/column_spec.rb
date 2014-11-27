@@ -1,5 +1,5 @@
 require "rspec"
-require_relative "../lib/Column.rb"
+require_relative "../lib/column"
 require 'set'
 
 module TestDataGenerator

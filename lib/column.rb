@@ -1,7 +1,7 @@
 require 'forwardable'
 
 require_relative 'data_generators'
-require_relative 'Table'
+require_relative 'table'
 require_relative 'dependency'
 
 module TestDataGenerator
