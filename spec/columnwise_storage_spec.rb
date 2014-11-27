@@ -1,83 +1,114 @@
 require "rspec"
+require_relative "eventually"
 require_relative "../lib/columnwise_storage"
 require_relative "../lib/dependency"
+require_relative "../lib/database"
 
 module TestDataGenerator
-  describe ColumnwiseStorage do
-    before :example do
-      @data_store = ColumnwiseStorage.new([:a, :b])
+  # toy Generator class
+  class CountGenerator
+    include Generator
+    @current
+
+    def initialize
+      @current = 0
     end
 
-    describe :append_row! do
-      context 'adds a row to the given category, and then' do
-        describe :retrieve do
-          it 'returns all the values at the two coordinates given' do
-            @data_store.append_row!(:b, { x: 8, y: 5 })
-            expect(@data_store.retrieve(:b, :x)).to eq([8])
-            expect(@data_store.retrieve(:b, :wrong)).to eq([])
-          end
+    def generate
+      @current += 1
+    end
+  end
 
-          it 'raises an ArgumentError if the category does not exist' do
-            expect {
-              @data_store.retrieve(:wrong, :x)
-            }.to raise_error(ArgumentError)
-          end
-        end
+  describe ColumnwiseStorage do
+    before :example do
+      @table1 = Table.new(:table1)
+      @table2 = Table.new(:table2)
+      @col1 = Column.new(:col1, CountGenerator.new)
+      @col2 = Column.new(:col2, CountGenerator.new)
+
+      @table1.add! @col1
+      @table2.add! @col2
+
+      @db = Database.new('db', [@table1, @table2])
+
+      @storage = ColumnwiseStorage.new(@db, { table1: 3, table2: 5 })
+    end
+
+    describe :generate! do
+      it '' do
+        @storage.generate!
+        # should have on row total in @storage
+        expect(@storage.height(:table1) + @storage.height(:table2)).to eq(1)
+      end
+    end
+
+    describe :generate_all! do
+      it '' do
+        @storage.generate_all!
+        expect(@storage.height(:table1)).to eq(3)
       end
     end
 
     describe :retrieve_by_id do
       it 'retrieves data by ColumnId' do
-        @data_store.append_row!(:b, { x: 8, y: 5 })
-        id = ColumnId.new(:b, :x)
+        @storage.generate_all!
+        id = ColumnId.new(:table1, :col1)
 
-        expect(@data_store.retrieve_by_id(id)).to eq([8])
+        col_data = @storage.retrieve_by_id(id)
+        expect(col_data.length).to eq(3)
       end
+    end
+
+    it 'fills data as needed by dependent columns' do
+      col = ColumnId.new(:table1, :col1)
+      gen = BelongsToGenerator.new(@storage, col)
+      @table2.add!(Column.new(:depends, gen))
+
+      # if it tries to generate a row for table2, @db will
+      # have to generate a row for table1 first; thus,
+      # we'll have one row in each
+      expect { 
+        @storage.reset!
+        @storage.generate!
+        col1_height = @storage.retrieve(:table1, :col1).length
+        col2_height = @storage.retrieve(:table2, :col2).length
+        [ col1_height, col2_height ]
+      }.to eventually be == [1, 1]
     end
 
     describe :reset! do
       it 'deletes existing data' do
-        @data_store.append_row!(:a, { dog: 'Rex', cat: 'Spot' })
-        @data_store.append_row!(:b, { x: 9, y: 12 })
-        @data_store.reset!
+        3.times { @storage.generate! }
+        @storage.reset!
 
-        expect(@data_store.retrieve(:a, :dog)).to eq([])
+        expect(@storage.retrieve(:table2, :col2)).to eq([])
       end
     end
 
     describe :offload! do
       it 'yields data from category as rows, in order appended, then deletes that data' do
-        @data_store.append_row!(:a, { dog: 'Rex', cat: 'Spot' })
-        @data_store.append_row!(:a, { dog: 'Dog', cat: 'Merlin' })
+        @storage.generate_all!
 
-        count = 0
-        @data_store.offload!(:a) do |row|
-          if count == 0
-            expect(row).to eq(['Rex', 'Spot'])
-          elsif count == 1
-            expect(row).to eq(['Dog', 'Merlin'])
-          end
-
-          count += 1
+        table1 = []
+        @storage.offload!(:table1) do |row|
+          table1 << row
         end
 
-        expect(count).to be 2
-        expect(@data_store.retrieve(:a, :dog)).to eq([])
+        expect(table1.length).to eq(3)
+        expect(table1).to contain_exactly([1], [2], [3])
       end
     end
 
     describe :offload_all! do
       it 'yields all rows from all categories, in a Hash' do
-        @data_store.append_row!(:a, { dog: 'Rex', cat: 'Spot' })
-        @data_store.append_row!(:a, { dog: 'Dog', cat: 'Merlin' })
-        @data_store.append_row!(:b, { x: 2, y: 0 })
+        @storage.generate_all!
 
-        data = @data_store.offload_all!
+        data = @storage.offload_all!
 
-        expect(data[:a].length).to be 2
-        expect(data[:a][1]).to eq(['Dog', 'Merlin'])
-        expect(data[:b].length).to be 1
-        expect(data[:b][0]).to eq([2, 0])
+        expect(data[:table1].length).to eq(3)
+        expect(data[:table1]).to contain_exactly([1], [2], [3])
+        expect(data[:table2].length).to eq(5)
+        expect(data[:table2]).to contain_exactly([1], [2], [3], [4], [5])
       end
     end
 

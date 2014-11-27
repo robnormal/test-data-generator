@@ -1,7 +1,7 @@
 require "rspec"
 require_relative "eventually"
 require_relative "../lib/database"
-require_relative "../lib/column_data"
+require_relative "../lib/columnwise_storage"
 
 module TestDataGenerator
   # toy Generator class
@@ -28,66 +28,36 @@ module TestDataGenerator
       @table1.add! @col1
       @table2.add! @col2
 
-      @db = Database.new('db', { @table1 => 3, @table2 => 4 })
+      @db = Database.new('db', [@table1, @table2])
     end
     
     it 'has String attribute "name"' do
       expect(@db.name).to eq('db')
     end
 
-    it 'has ColumnwiseStorage attribute "data"' do
-      expect(@db.data).to be_a(ColumnwiseStorage)
+    it 'has Array attribute "table_names"' do
+      expect(@db.table_names).to be_a(Array)
     end
 
-    describe :initialize do
-      describe 'accepts a Hash of tables => # of rows, then' do
-        describe :generate_all! do
-          it 'generates all rows requested' do
-            @db.generate_all!
-
-            expect(
-              @db.data.retrieve(:table1, :col1)
-            ).to contain_exactly(1, 2, 3)
-          end
-        end
+    describe :generate_for do
+      it 'generates a row for the given table' do
+        expect(@db.generate_for(:table1)).to eq({ col1: 1 })
       end
     end
 
-    describe :reset do
-      it 'discards all generated data' do
-        @db.generate_all!
-        @db.reset!
-        expect(@db.data.retrieve(:table1, :col1)).to be_empty
-        expect(@db.data.retrieve(:table2, :col2)).to be_empty
+    describe :needs_for do
+      it 'returns columns that need more data before we can generate, and by how much' do
+        storage = double(ColumnwiseStorage)
+        allow(storage).to receive(:retrieve_by_id) { [] }
+
+        foreign = ColumnId.new(:table1, :col1)
+        belongs = BelongsToGenerator.new(storage, foreign)
+        @table2.add!(Column.new(:belonger, belongs))
+
+        expect(@db.needs_for(:table2, storage)).to eq( [[foreign, 1]] )
       end
     end
 
-    # Database must produce BelongsToGenerator for you...
-    describe :create_belongs_to do
-      it 'returns a new BelongsToGenerator pointing to given column' do
-        col = ColumnId.new(:table1, :col1)
-        gen = @db.create_belongs_to(col)
-        expect(gen).to be_a(BelongsToGenerator)
-        expect(gen.dependencies).to be == [col]
-      end
-    end
-
-    it 'fills data as needed by dependent columns' do
-      col = ColumnId.new(:table1, :col1)
-      gen = @db.create_belongs_to(col)
-      @table2.add!(Column.new(:depends, gen))
-
-      # if it tries to generate a row for table2, @db will
-      # have to generate a row for table1 first; thus,
-      # we'll have one row in each
-      expect { 
-        @db.reset!
-        @db.generate!
-        col1_height = @db.data.retrieve(:table1, :col1).length
-        col2_height = @db.data.retrieve(:table2, :col2).length
-        [ col1_height, col2_height ]
-      }.to eventually be == [1, 1]
-    end
   end
 end
 

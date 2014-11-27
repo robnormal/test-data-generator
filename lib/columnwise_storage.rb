@@ -1,15 +1,20 @@
 require_relative "util"
+require_relative 'weighted_picker'
 
 module TestDataGenerator
   class ColumnwiseStorage
-    # @param [Hash{ Object => Hash{ Object => Array } }]
-    def initialize(categories)
-      @categories = categories
+    # @param [Database]
+    def initialize(db, table_limits)
+      @db = db
+      @limits = table_limits
+      @categories = db.table_names
+
+      create_thresholds
       reset!
     end
 
     def retrieve(cat, subcat)
-      check_category(cat)
+      check_category cat
 
       @data[cat][subcat] || []
     end
@@ -18,13 +23,15 @@ module TestDataGenerator
       retrieve(column_id.table, column_id.column)
     end
 
-    def append_row!(category, row)
-      check_category(category)
-
-      row.each do |cat2, data|
-        @data[category][cat2] ||= []
-        @data[category][cat2] << data
+    def generate!
+      # pick table at random (weighted odds), and return what it generates
+      @table_picker.fmap(&:pick).fmap do |table|
+        generate_for! table
       end
+    end
+
+    def generate_all!
+      until generate!.nothing?; end
     end
 
     def reset!
@@ -36,7 +43,7 @@ module TestDataGenerator
 
     # yield successive rows to block, and delete the row
     def offload!(category)
-      check_category(category)
+      check_category category
 
       columns = @data[category].values
       len = columns.first.length # height of data
@@ -54,18 +61,61 @@ module TestDataGenerator
     end
 
     def height(category)
-      check_category(category)
+      check_category category
 
       @data[category].empty? ? 0 : @data[category].first[1].length
     end
 
+
     private
+
 
     def check_category(cat)
       if @data[cat].nil?
         raise(ArgumentError, "No such category: #{cat}")
       end
     end
+
+    def generate_for!(table)
+      check_category table
+      fulfill_needs! table
+
+      @db.generate_for(table).each do |col, data|
+        @data[table][col] ||= []
+        @data[table][col] << data
+      end
+
+      if space_left(table) <= 0
+        @limits.delete table
+        create_thresholds
+      end
+    end
+
+    def fulfill_needs!(table)
+      @db.needs_for(table, self).each do |source_id, num|
+        # If row cannot be created, needs are unfulfillable, so bail
+        if space_left(table) < num
+          raise(RuntimeError, "Unable to fulfill requirements for " +
+            "#{table} due to dependency on #{source_id.table}")
+        end
+
+        num.times do
+          generate_for!(source_id.table)
+        end
+      end
+    end
+
+    def space_left(table)
+      @limits[table] - height(table)
+    end
+
+    def create_thresholds
+      @table_picker =
+        if @limits.empty?
+          Maybe.nothing
+        else
+          Maybe.just(WeigtedPicker.new @limits)
+        end
+    end
   end
 end
-
