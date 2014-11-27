@@ -20,6 +20,8 @@ module TestDataGenerator
     def self.columns_from_config(cfgs, db)
       cfgs.map { |cfg|
         name, type, args, options = *cfg
+        args ||= []
+        options ||= {}
 
         if dependent_column?(type, args, options)
           options[:db] = db

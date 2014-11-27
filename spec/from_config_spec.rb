@@ -1,4 +1,5 @@
 require "rspec"
+require "set"
 require_relative "../test-data-generator"
 
 module TestDataGenerator
@@ -44,6 +45,26 @@ module TestDataGenerator
 
       expect(data[:authors].first).to be_a(Hash)
       expect(data[:authors].first[:name]).to be_a(String)
+    end
+
+    it 'creates belongs_to columns' do
+      config = {
+        users: [3, [
+          [:id]
+        ]],
+        books: [5, [
+          [:user_id, :belongs_to, [:users, :id]]
+        ]]
+      }
+
+      db = TestDataGenerator.from_config(config)
+      db.generate_all!
+      data = db.offload_all!
+
+      user_ids = Set.new(data[:users].map { |user| user[:id] })
+      book_user_ids = Set.new(data[:books].map { |book| book[:user_id] })
+
+      expect(book_user_ids).to be_subset(user_ids)
     end
   end
 end

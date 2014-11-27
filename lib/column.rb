@@ -25,10 +25,6 @@ module TestDataGenerator
     # [type] Symbol designating Column type
     # [args] Additional arguments, depending on type
     def self.from_spec(name, type = nil, args = [], options = {})
-      # unfortunately, passing explicit nil will override defaults, so...
-      args ||= []
-      options ||= {}
-
       name = name.to_sym
 
       # name-based type magic
