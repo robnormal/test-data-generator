@@ -203,7 +203,6 @@ module TestDataGenerator
     # @param column_data [ColumnwiseStorage]
     # @param column_id [ColumnId]
     def initialize(column_data, column_id)
-      raise ArgumentError unless column_data.is_a? ColumnwiseStorage
       @cd = column_data
       @column = column_id
     end

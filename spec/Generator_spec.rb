@@ -1,6 +1,6 @@
 require "rspec"
 require_relative "eventually"
-require_relative "../lib/data_generators"
+require_relative "../lib/database"
 require_relative "../lib/dependency"
 require_relative "../lib/columnwise_storage"
 
@@ -191,11 +191,31 @@ module TestDataGenerator
     end
   end
 
+  class SimpleGenerator
+    include Generator
+    def initialize(references)
+      @refs = references
+    end
+
+    def generate
+      @refs[:counter] += 1
+      @refs[:data][@refs[:counter]]
+    end
+  end
+
   context "BelongsTo" do
     before :example do
       def setup_belongs(data)
-        @data = data
-        @storage = ColumnwiseStorage.new([:users])
+        @refs = {}
+        reset_gen data
+
+        @id = Column.new(:id, SimpleGenerator.new(@refs))
+
+        @users = Table.new(:users)
+        @users.add! @id
+        @db = Database.new('db', [@users])
+        @storage = ColumnwiseStorage.new(@db, { users: 10 })
+
         @foreign = ColumnId.new(:users, :id)
         @belongs = BelongsToGenerator.new(@storage, @foreign)
         @unique = UniqueBelongsToGenerator.new(@storage, @foreign)
@@ -203,12 +223,15 @@ module TestDataGenerator
         set_data(data)
       end
 
+      def reset_gen(data)
+        @refs[:data] = data
+        @refs[:counter] = -1
+      end
+
       def set_data(data)
         @storage.reset!
-
-        data.each do |datum|
-          @storage.append_row!(:users, { id: datum })
-        end
+        reset_gen(data)
+        data.length.times { @storage.generate! }
       end
     end
 
@@ -220,10 +243,10 @@ module TestDataGenerator
 
       it 'always uses the current data' do
         setup_belongs([1])
-        expect(@belongs.generate).to be 1
+        expect(@belongs.generate).to eq(1)
 
         set_data([2])
-        expect(@belongs.generate).to be 2
+        expect(@belongs.generate).to eq(2)
       end
 
       describe :dependencies do
