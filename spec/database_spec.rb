@@ -35,8 +35,8 @@ module TestDataGenerator
       expect(@db.name).to eq('db')
     end
 
-    it 'has Hash attribute "data"' do
-      expect(@db.data).to be_a(Hash)
+    it 'has ColumnwiseStorage attribute "data"' do
+      expect(@db.data).to be_a(ColumnwiseStorage)
     end
 
     describe :initialize do
@@ -45,7 +45,9 @@ module TestDataGenerator
           it 'generates all rows requested' do
             @db.generate_all!
 
-            expect(@db.data[:table1][:col1]).to contain_exactly(1, 2, 3)
+            expect(
+              @db.data.retrieve(:table1, :col1)
+            ).to contain_exactly(1, 2, 3)
           end
         end
       end
@@ -55,8 +57,8 @@ module TestDataGenerator
       it 'discards all generated data' do
         @db.generate_all!
         @db.reset!
-        expect(@db.data[:table1][:col1]).to be_empty
-        expect(@db.data[:table2][:col2]).to be_empty
+        expect(@db.data.retrieve(:table1, :col1)).to be_empty
+        expect(@db.data.retrieve(:table2, :col2)).to be_empty
       end
     end
 
@@ -75,10 +77,15 @@ module TestDataGenerator
       gen = @db.create_belongs_to(col)
       @table2.add!(Column.new(:depends, gen))
 
+      # if it tries to generate a row for table2, @db will
+      # have to generate a row for table1 first; thus,
+      # we'll have one row in each
       expect { 
         @db.reset!
         @db.generate!
-        [@db.data[:table1][:col1].length, @db.data[:table2][:depends].length]
+        col1_height = @db.data.retrieve(:table1, :col1).length
+        col2_height = @db.data.retrieve(:table2, :col2).length
+        [ col1_height, col2_height ]
       }.to eventually be == [1, 1]
     end
   end

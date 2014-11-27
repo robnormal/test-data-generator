@@ -2,6 +2,7 @@ require_relative 'Table'
 require_relative 'weighted_picker'
 require_relative 'directed_graph'
 require_relative 'util'
+require_relative 'columnwise_storage'
 
 module TestDataGenerator
   # represents an entire database worth of data
@@ -22,11 +23,9 @@ module TestDataGenerator
         @limits[table.name] = limit
       end
 
-      reset!
-
       # allows dependent Columns to query the data they need
       # without allowing them access to the full Database
-      @column_data = ColumnData.new @data
+      @data = ColumnwiseStorage.new(@tables.keys)
 
       if dependency_graph.has_cycles?
         raise(ArgumentError, 'tables have circular dependencies')
@@ -46,19 +45,13 @@ module TestDataGenerator
       until generate!.nothing?; end
     end
 
+    # maybe get rid of?
     def reset!
-      @data = {}
-
-      @tables.each do |t_name, table|
-        @data[t_name] = {}
-        table.column_names.each do |c_name|
-          @data[t_name][c_name] = []
-        end
-      end
+      @data.reset!
     end
 
-    def create_belongs_to(column)
-      BelongsToGenerator.new(@column_data, column)
+    def create_belongs_to(column_id)
+      BelongsToGenerator.new(@data, column_id)
     end
 
     private
@@ -66,9 +59,7 @@ module TestDataGenerator
     def generate_for(table)
       fulfill_needs table
 
-      @tables[table].generate.each do |column, value|
-        @data[table][column] << value
-      end
+      @data.append_row!(table, @tables[table].generate)
 
       if space_left(table) <= 0
         @limits.delete table
@@ -89,7 +80,7 @@ module TestDataGenerator
     def fulfill_needs(table)
       t = @tables[table]
 
-      t.needs(@column_data).each do |source_id, num|
+      t.needs(@data).each do |source_id, num|
         # If row cannot be created, needs are unfulfillable, so bail
         if space_left(table) < num
           raise(RuntimeError, "Unable to fulfill requirements for " +
@@ -103,7 +94,7 @@ module TestDataGenerator
     end
 
     def space_left(table)
-      @limits[table] - row_count(table)
+      @limits[table] - @data.height(table)
     end
 
     def create_thresholds
@@ -113,10 +104,6 @@ module TestDataGenerator
         else
           Maybe.just(WeigtedPicker.new @limits)
         end
-    end
-
-    def row_count(table)
-      @data[table].first[1].length || 0
     end
   end
 end
