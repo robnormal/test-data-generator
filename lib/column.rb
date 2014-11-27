@@ -25,6 +25,10 @@ module TestDataGenerator
     # [type] Symbol designating Column type
     # [args] Additional arguments, depending on type
     def self.from_spec(name, type = nil, args = [], options = {})
+      # unfortunately, passing explicit nil will override defaults, so...
+      args ||= []
+      options ||= {}
+
       name = name.to_sym
 
       # name-based type magic
@@ -48,10 +52,12 @@ module TestDataGenerator
         generator = WordGenerator.new(*args)
       when :url
         generator = UrlGenerator.new(*args)
-      when :bool, :boolean
-        generator = NumberGenerator.new(min: 0, max: 1)
       when :enum
         generator = EnumGenerator.new(*args)
+      when :bool, :boolean
+        generator = NumberGenerator.new(min: 0, max: 1)
+      when :belongs_to
+        generator = BelongsToGenerator.new(options[:db], ColumnId.new(*args))
       when :id
         # id should be unique integer
         options[:unique] = true

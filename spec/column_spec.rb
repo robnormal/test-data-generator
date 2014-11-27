@@ -1,5 +1,6 @@
 require "rspec"
 require_relative "../lib/column"
+require_relative "shared"
 require 'set'
 
 module TestDataGenerator
@@ -48,6 +49,16 @@ module TestDataGenerator
         end
       end
 
+      describe 'when type is :belongs_to' do
+        include TestFixtures
+
+        it 'uses third argument Array as args to Forgery' do
+          setup_belongs([8])
+          col = Column.from_spec(:user_id, :belongs_to, [:users, :id], db: @db)
+          expect(col.generate).to eq(8)
+        end
+      end
+
       describe 'when "unique" option is true' do
         it 'produces a UniqueGenerator' do
           col = Column.from_spec(:surname, :number, [min: 1, max: 10], unique: true)
@@ -79,40 +90,5 @@ module TestDataGenerator
     end
   end
 
-=begin
-  describe ForeignColumn do
-    it 'selects random entries from another column' do
-      table1 = Table.new('main', 5, [[:id]])
-      table2 = Table.new('other', 5)
-
-      belongs = BelongsToGenerator.new(:main, :id)
-      foreign = ForeignColumn.new(table2, :main_id, belongs)
-      table2.add foreign
-
-      set1 = Set.new(table1.to_a.map { |x| x.first })
-      set2 = Set.new(table2.to_a.map { |x| x.first })
-
-      expect(set2.subset?(set1)).to be true
-    end
-
-    it 'respects uniqueness' do
-      table1 = Table.new('main', 10, [[:id]])
-      table2 = Table.new('other', 10)
-
-      belongs = BelongsToGenerator.new(:main, :id, unique: true)
-      foreign = ForeignColumn.new(table2, :main_id, belongs)
-      table2.add foreign
-
-      a = table1.to_a.map { |x| x.first}
-      b = table2.to_a.map { |x| x.first}
-      set1 = Set.new(a)
-      set2 = Set.new(b)
-
-      # Only need to check that set1 is contained in set2
-      # By previous test, we know set2 is contained in set1
-      expect(set1.subset?(set2)).to be true
-    end
-  end
-=end
 end
 
