@@ -18,13 +18,13 @@ module TestDataGenerator
     # Default implementation assumes we only need one row per
     # dependency
     #
-    # @param ColumnData
-    #   ColumnData containing data for depended-on columns
+    # @param ColumnwiseStorage
+    #   ColumnwiseStorage containing data for depended-on columns
     # @return [Array<Array(ColumnId, Integer)>]
     def needs(column_data)
       needed = []
       dependencies.each { |d|
-        if column_data.data_for(d).empty?
+        if column_data.retrieve_by_id(d).empty?
           needed << [d, 1]
         end
       }

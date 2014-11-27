@@ -1,8 +1,8 @@
 require "rspec"
 require_relative "eventually"
 require_relative "../lib/data_generators"
-require_relative "../lib/column_data"
 require_relative "../lib/dependency"
+require_relative "../lib/columnwise_storage"
 
 
 module TestDataGenerator
@@ -195,14 +195,20 @@ module TestDataGenerator
     before :example do
       def setup_belongs(data)
         @data = data
-        @column_data = ColumnData.new({ users: { id: @data } })
+        @storage = ColumnwiseStorage.new([:users])
         @foreign = ColumnId.new(:users, :id)
-        @belongs = BelongsToGenerator.new(@column_data, @foreign)
-        @unique = UniqueBelongsToGenerator.new(@column_data, @foreign)
+        @belongs = BelongsToGenerator.new(@storage, @foreign)
+        @unique = UniqueBelongsToGenerator.new(@storage, @foreign)
+
+        set_data(data)
       end
 
       def set_data(data)
-        @data.replace(data)
+        @storage.reset!
+
+        data.each do |datum|
+          @storage.append_row!(:users, { id: datum })
+        end
       end
     end
 
@@ -234,14 +240,14 @@ module TestDataGenerator
         it 'returns request for 1 value of column it depends on, if that column is empty' do
           setup_belongs([])
 
-          column, num_needed = @belongs.needs(@column_data).first
+          column, num_needed = @belongs.needs(@storage).first
           expect(num_needed).to be 1
         end
 
         it 'returns empty Array if column has data' do
           setup_belongs([8])
 
-          expect(@belongs.needs(@column_data)).to be_empty
+          expect(@belongs.needs(@storage)).to be_empty
         end
       end
     end

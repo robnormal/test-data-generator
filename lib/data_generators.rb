@@ -200,15 +200,16 @@ module TestDataGenerator
   class BelongsToGenerator
     include Generator
 
-    # @param column_data [ColumnData]
+    # @param column_data [ColumnwiseStorage]
     # @param column_id [ColumnId]
     def initialize(column_data, column_id)
+      raise ArgumentError unless column_data.is_a? ColumnwiseStorage
       @cd = column_data
       @column = column_id
     end
 
     def generate
-      @cd.data_for(@column).sample
+      @cd.retrieve_by_id(@column).sample
     end
 
     def dependencies
@@ -219,8 +220,8 @@ module TestDataGenerator
   class UniqueBelongsToGenerator < BelongsToGenerator
     include UniqueGenerator
 
-    def initialize(column_data, column_id, data_store = [])
-      @cd = column_data
+    def initialize(storage, column_id, data_store = [])
+      @storage = storage
       @column = column_id
       @data_store = data_store
       reset!
@@ -237,7 +238,7 @@ module TestDataGenerator
     end
 
     def reset!
-      @unused = @cd.data_for @column
+      @unused = @storage.retrieve_by_id @column
       @grabbed = @unused.length
     end
 
@@ -248,7 +249,7 @@ module TestDataGenerator
 
     private
     def update_unused
-      data = @cd.data_for @column
+      data = @storage.retrieve_by_id @column
       @unused += data.drop @grabbed
       @grabbed = data.length
     end
