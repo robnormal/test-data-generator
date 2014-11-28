@@ -2,6 +2,25 @@ require_relative "util"
 require_relative 'weighted_picker'
 
 module TestDataGenerator
+  class StrictHash < Hash
+    def initialize(&blk)
+      if blk
+        @blk = blk
+      else
+        @blk = ->(key) { "No such key: #{key}" }
+      end
+    end
+
+    def [](key)
+      val = super
+      if val.nil?
+        raise(IndexError, @blk.call(key))
+      else
+        val
+      end
+    end
+  end
+
   class Database
     # @param [Database]
     def initialize(tables_limits = {})
@@ -23,8 +42,6 @@ module TestDataGenerator
     end
 
     def retrieve(cat, subcat)
-      check_category cat
-
       @data[cat][subcat] || []
     end
 
@@ -44,7 +61,8 @@ module TestDataGenerator
     end
 
     def reset!
-      @data = {}
+      @data = StrictHash.new { |table|  "No such table: #{table}" }
+
       @tables.each do |name, table|
         @data[name] = {}
         table.column_names.each do
@@ -55,8 +73,6 @@ module TestDataGenerator
 
     # yield successive rows to block, and delete the row
     def offload!(category)
-      check_category category
-
       columns = @data[category]
       len = height category
 
@@ -66,8 +82,6 @@ module TestDataGenerator
     end
 
     def columns(category)
-      check_category category
-
       @data[category].first && @data[category].first.keys || []
     end
 
@@ -79,8 +93,6 @@ module TestDataGenerator
     end
 
     def height(category)
-      check_category category
-
       @data[category].empty? ? 0 : @data[category].first[1].length
     end
 
@@ -98,14 +110,7 @@ module TestDataGenerator
       reset!
     end
 
-    def check_category(cat)
-      if @data[cat].nil?
-        raise(ArgumentError, "No such table: #{cat}")
-      end
-    end
-
     def generate_for!(table)
-      check_category table
       fulfill_needs! table
 
       @tables[table].generate.each do |col, data|
