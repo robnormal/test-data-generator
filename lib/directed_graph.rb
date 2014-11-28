@@ -1,4 +1,10 @@
 class DirectedGraph
+  def self.from_edges(edges)
+    graph = DirectedGraph.new
+    edges.each do |edge| graph.add_edge!(edge) end
+    graph
+  end
+
   def initialize(edges = [])
     @edges = []
     @nodes = {}
@@ -10,9 +16,12 @@ class DirectedGraph
       add!(*edge)
     end
   end
-  
+
   def add!(from, to)
-    edge = GraphEdge.new(from, to)
+    add_edge!(GraphEdge.new(from, to))
+  end
+
+  def add_edge!(edge)
     @edges << edge
 
     if !@nodes[edge.from]
