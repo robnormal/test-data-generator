@@ -28,79 +28,104 @@ module TestDataGenerator
       @table1.add! @col1
       @table2.add! @col2
 
-      @storage = Database.new({ @table1 => 3, @table2 => 5 })
+      @db = Database.new({ @table1 => 3, @table2 => 5 })
     end
 
     describe :generate! do
       it "generates one row for a table of it's choosing" do
-        @storage.generate!
+        @db.generate!
 
-        # should have on row total in @storage
-        expect(@storage.height(:table1) + @storage.height(:table2)).to eq(1)
+        # should have on row total in @db
+        expect(@db.height(:table1) + @db.height(:table2)).to eq(1)
       end
     end
 
     describe :generate_all! do
       it 'generates all rows for all tables' do
-        @storage.generate_all!
-        expect(@storage.height(:table1)).to eq(3)
+        @db.generate_all!
+        expect(@db.height(:table1)).to eq(3)
       end
     end
 
     describe :add_table! do
       it 'adds a table to the database' do
-        storage = Database.new
-        storage.add_table!(@table1, 3)
+        db = Database.new
+        db.add_table!(@table1, 3)
 
-        expect { storage.height :table1 }.not_to raise_error
+        expect { db.height :table1 }.not_to raise_error
 
-        storage.generate_all!
-        expect(storage.height :table1).to eq(3)
+        db.generate_all!
+        expect(db.height :table1).to eq(3)
       end
     end
 
     describe :retrieve_by_id do
       it 'retrieves data by ColumnId' do
-        @storage.generate_all!
+        @db.generate_all!
         id = ColumnId.new(:table1, :col1)
 
-        col_data = @storage.retrieve_by_id(id)
+        col_data = @db.retrieve_by_id(id)
         expect(col_data.length).to eq(3)
       end
     end
 
     it 'fills data as needed by dependent columns' do
       col = ColumnId.new(:table1, :col1)
-      gen = BelongsToGenerator.new(@storage, col)
+      gen = BelongsToGenerator.new(@db, col)
       @table2.add!(Column.new(:depends, gen))
 
       # if it tries to generate a row for table2, @db will
       # have to generate a row for table1 first; thus,
       # we'll have one row in each
       expect { 
-        @storage.reset!
-        @storage.generate!
-        col1_height = @storage.retrieve(:table1, :col1).length
-        col2_height = @storage.retrieve(:table2, :col2).length
+        @db.reset!
+        @db.generate!
+        col1_height = @db.retrieve(:table1, :col1).length
+        col2_height = @db.retrieve(:table2, :col2).length
         [ col1_height, col2_height ]
       }.to eventually be == [1, 1]
     end
 
+    it 'resolves complex dependencies' do
+      col1 = ColumnId.new(:table1, :col1)
+      gen1 = BelongsToGenerator.new(@db, col1)
+
+      col2 = ColumnId.new(:table2, :col2)
+      gen2 = BelongsToGenerator.new(@db, col2)
+
+      @table1.add!(Column.new(:depends, gen2))
+      @table2.add!(Column.new(:depends, gen1))
+
+      # if it tries to generate a row for table2, @db will
+      # have to generate a row for table1 first; thus,
+      # we'll have one row in each
+      expect { 
+        @db.reset!
+        @db.generate!
+        col1_height = @db.retrieve(:table1, :col1).length
+        col2_height = @db.retrieve(:table2, :col2).length
+        [ col1_height, col2_height ]
+      }.to eventually be == [1, 1]
+    end
+
+    it 'raises an error for circular dependencies' do
+    end
+
     describe :reset! do
       it 'deletes existing data' do
-        3.times { @storage.generate! }
-        @storage.reset!
+        3.times { @db.generate! }
+        @db.reset!
 
-        expect(@storage.retrieve(:table2, :col2)).to eq([])
+        expect(@db.retrieve(:table2, :col2)).to eq([])
       end
     end
 
     describe :offload! do
       it 'yields data from category as rows, in order appended, then deletes that data' do
-        @storage.generate_all!
+        @db.generate_all!
 
         table1 = []
-        @storage.offload!(:table1) do |row|
+        @db.offload!(:table1) do |row|
           table1 << row
         end
 
@@ -111,9 +136,9 @@ module TestDataGenerator
 
     describe :offload_all! do
       it 'yields all rows from all categories, in a Hash' do
-        @storage.generate_all!
+        @db.generate_all!
 
-        data = @storage.offload_all!
+        data = @db.offload_all!
 
         expect(data[:table1].length).to eq(3)
         expect(data[:table1][1][:col1]).to eq(2)

@@ -119,15 +119,15 @@ module TestDataGenerator
     end
 
     def fulfill_needs!(table)
-      @tables[table].needs(self).each do |source_id, num|
+      @tables[table].needs(self).each do |source, num|
         # If row cannot be created, needs are unfulfillable, so bail
-        if space_left(table) < num
+        if space_left(source.table) < num
           raise(RuntimeError, "Unable to fulfill requirements for " +
-            "#{table} due to dependency on #{source_id.table}")
+            "#{table} due to dependency on #{source.table}")
         end
 
         num.times do
-          generate_for!(source_id.table)
+          generate_for!(source.table)
         end
       end
     end
