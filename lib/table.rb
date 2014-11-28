@@ -47,7 +47,7 @@ module TestDataGenerator
     def dependencies_as_edges
       @columns.values.map { |c|
         c.dependencies.map { |col_id|
-          DependencyEdge.new(ColumnId.new(@name, c.name), col_id)
+          GraphEdge.new(ColumnId.new(@name, c.name), col_id)
         }
       }.flatten
     end
