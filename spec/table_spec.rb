@@ -1,5 +1,5 @@
 require "rspec"
-require_relative "../lib/table"
+require_relative "../test-data-generator"
 
 def gen_stub
   col = TestDataGenerator::ColumnId.new(:table1, :column1)
@@ -27,7 +27,7 @@ module TestDataGenerator
       @current = 0
     end
 
-    def generate
+    def generate(_ = nil)
       @current += 1
     end
   end
@@ -75,12 +75,12 @@ module TestDataGenerator
       expect(tries).to be_between(0, 10)
     end
 
-    describe 'generate' do
+    describe :generate do
       it 'generates a full row' do
         @dummy.add! @age
         @dummy.add_from_spec!(:tries, :number, [max: 10])
         10.times do
-          test_row @dummy.generate
+          test_row(@dummy.generate({}))
         end
       end
     end
@@ -89,7 +89,7 @@ module TestDataGenerator
       it 'accepts an array of columns as second argument' do
         users = Table.new('users', [Column.new(:id, CountGenerator.new)])
 
-        row = users.generate
+        row = users.generate({})
 
         expect(row[:id]).to be_a(Fixnum)
       end

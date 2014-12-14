@@ -197,7 +197,7 @@ module TestDataGenerator
       @refs = references
     end
 
-    def generate
+    def generate(_ = nil)
       @refs[:counter] += 1
       @refs[:data][@refs[:counter]]
     end
@@ -209,16 +209,17 @@ module TestDataGenerator
     describe BelongsToGenerator do
 
       it 'selects data from a column in a Database' do
+        data = [2,3,4]
         setup_belongs([2,3,4])
-        expect { @belongs.generate }.to eventually be 2
+        expect { @belongs.generate @foreign_a => [2,3,4]}.to eventually be 2
       end
 
       it 'always uses the current data' do
         setup_belongs([1])
-        expect(@belongs.generate).to eq(1)
+        expect(@belongs.generate @foreign_a => [1]).to eq(1)
 
         set_belongs_data([2])
-        expect(@belongs.generate).to eq(2)
+        expect(@belongs.generate @foreign_a => [2]).to eq(2)
       end
 
       describe :dependencies do
@@ -250,28 +251,29 @@ module TestDataGenerator
     describe UniqueBelongsToGenerator do
       it 'selects unique data from a column in a Database' do
         setup_belongs([2,3,4,5,6,7])
-        expect(@unique.iterate 6).to contain_exactly(2,3,4,5,6,7)
+        expect(@unique.iterate(6, @foreign_a => [2,3,4,5,6,7]))
+          .to contain_exactly(2,3,4,5,6,7)
       end
 
       it "knows when it's empty" do
         setup_belongs([2,3,4,5,6,7])
-        @unique.iterate 6
+        @unique.iterate(6, @foreign_a => [2,3,4,5,6,7])
         expect(@unique.empty?).to be true
       end
 
       it 'stays up-to-date with column data, without reusing old data' do
         setup_belongs([3,4,5])
-        @unique.iterate 3
+        @unique.iterate(3, @foreign_a => [3,4,5])
 
         # new data gets added to column...
         set_belongs_data([3,4,5,9])
 
-        expect(@unique.generate).to be 9
+        expect(@unique.generate @foreign_a => [3,4,5,9]).to be 9
       end
 
       it 'raises error if asked for more data than the column has' do
         setup_belongs([0,1])
-        expect { @unique.iterate 3 }.to raise_error
+        expect { @unique.iterate(3, @foreign_a => [0,1]) }.to raise_error
       end
     end
   end

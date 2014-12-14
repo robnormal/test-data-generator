@@ -55,7 +55,7 @@ module TestDataGenerator
         it 'uses third argument Array as args to Forgery' do
           setup_belongs([8])
           col = Column.from_spec(:user_id, :belongs_to, [:users, :id], db: @db)
-          expect(col.generate).to eq(8)
+          expect(col.generate({ [:users, :id] => [8] })).to eq(8)
         end
       end
 

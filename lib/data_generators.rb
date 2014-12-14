@@ -13,7 +13,7 @@ module TestDataGenerator
       @forger_args   = args
     end
 
-    def generate
+    def generate(_ = nil)
       @forger.send(@forger_method, *@forger_args)
     end
 
@@ -33,7 +33,7 @@ module TestDataGenerator
       @count = count
     end
 
-    def generate
+    def generate(_ = nil)
       @forger.send(@forger_method, num_words, random: true)
     end
 
@@ -77,7 +77,7 @@ module TestDataGenerator
       end
     end
 
-    def generate
+    def generate(_ = nil)
       length = @length || rand_between(@min_length, @max_length)
 
       (length.times.collect { rand_in @chars }).join
@@ -100,7 +100,7 @@ module TestDataGenerator
       @greater_than = greater_than
     end
 
-    def generate
+    def generate(_ = nil)
       if @greater_than
         current = @greater_than.last
 
@@ -121,7 +121,7 @@ module TestDataGenerator
       @forgery = Forgery(:internet)
     end
 
-    def generate
+    def generate(_ = nil)
       domain = @forgery.send :domain_name
       'http://' + domain
     end
@@ -146,8 +146,8 @@ module TestDataGenerator
       @null = null
     end
 
-    def generate
-      if rand < @null then nil else @generator.generate end
+    def generate(input = nil)
+      rand < @null ? nil : @generator.generate(input)
     end
   end
 
@@ -163,7 +163,7 @@ module TestDataGenerator
       @set = set.to_a
     end
 
-    def generate
+    def generate(_ = nil)
       @set.sample
     end
   end
@@ -190,7 +190,7 @@ module TestDataGenerator
 
     protected
 
-    def next_value
+    def next_value(_ = nil)
       @unused.pop
     end
   end
@@ -204,10 +204,12 @@ module TestDataGenerator
     # @param column_id [ColumnId]
     def initialize(db, column_id)
       @db = db
-      @column = column_id
+      @column_a = @column.to_a
     end
 
-    def generate
+    # @param [Hash{ Array(String,String) => Array]
+    #   data for columns depended on
+    def generate(_ = nil)
       @db.retrieve_by_id(@column).sample
     end
 
@@ -227,7 +229,7 @@ module TestDataGenerator
     end
 
     # must update @unused before checking for empty
-    def generate
+    def generate(_ = nil)
       update_unused
       super
     end
@@ -242,7 +244,7 @@ module TestDataGenerator
     end
 
     protected
-    def next_value
+    def next_value(_ = nil)
       @unused.delete_at(rand @unused.length)
     end
 

@@ -1,11 +1,11 @@
 module TestDataGenerator
   module Generator
     # @return One generated value
-    def generate; raise NotImplementedError end
+    def generate(input = {}); raise NotImplementedError end
 
     # @return [Array<Object>]
-    def iterate(n)
-      (1..n).collect { generate }
+    def iterate(n, input = {})
+      (1..n).collect { generate(input) }
     end
 
     # @return [Array<ColumnId>]
@@ -54,14 +54,14 @@ module TestDataGenerator
       raise(RuntimeError, 'no more unique values')
     end
 
-    def generate
+    def generate(input = {})
       if empty?; runout end
 
-      next_value
+      next_value(input)
     end
 
     protected
-    def next_value; raise NotImplementedError end
+    def next_value(input); raise NotImplementedError end
   end
 
   # Decorator class - generates values until it gets to one it
@@ -88,9 +88,9 @@ module TestDataGenerator
 
     protected
 
-    def next_value
+    def next_value(input)
       begin
-        value = @generator.generate
+        value = @generator.generate(input)
       end while @used[value]
 
       @used[value] = true
