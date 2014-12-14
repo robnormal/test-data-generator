@@ -14,8 +14,9 @@ module TestDataGenerator
       @db = Database.new({ @users => 10 })
 
       @foreign = ColumnId.new(:users, :id)
-      @belongs = BelongsToGenerator.new(@db, @foreign)
-      @unique = UniqueBelongsToGenerator.new(@db, @foreign)
+      @foreign_a = @foreign.to_a
+      @belongs = BelongsToGenerator.new(@foreign)
+      @unique = UniqueBelongsToGenerator.new(@foreign)
 
       set_belongs_data(data)
     end

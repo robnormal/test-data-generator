@@ -202,15 +202,19 @@ module TestDataGenerator
 
     # @param db [Database]
     # @param column_id [ColumnId]
-    def initialize(db, column_id)
-      @db = db
+    def initialize(column_id)
+      @column = column_id
       @column_a = @column.to_a
     end
 
     # @param [Hash{ Array(String,String) => Array]
     #   data for columns depended on
-    def generate(_ = nil)
-      @db.retrieve_by_id(@column).sample
+    def generate(column_data)
+      if column_data[@column_a].nil?
+        raise(ArgumentError, "Missing required data for column: #{@column}")
+      end
+
+      column_data[@column_a].sample
     end
 
     def dependencies
@@ -221,17 +225,15 @@ module TestDataGenerator
   class UniqueBelongsToGenerator < BelongsToGenerator
     include UniqueGenerator
 
-    def initialize(db, column_id, data_store = [])
-      @db = db
-      @column = column_id
-      @data_store = data_store
+    def initialize(column_id)
+      super
       reset!
     end
 
     # must update @unused before checking for empty
-    def generate(_ = nil)
-      update_unused
-      super
+    def generate(data)
+      update_unused(data)
+      super @unused
     end
 
     def empty?
@@ -239,18 +241,19 @@ module TestDataGenerator
     end
 
     def reset!
-      @unused = @db.retrieve_by_id @column
-      @grabbed = @unused.length
+      @grabbed = 0
+      @unused = []
     end
 
     protected
     def next_value(_ = nil)
-      @unused.delete_at(rand @unused.length)
+      @unused.delete_at rand(@unused.length)
     end
 
     private
-    def update_unused
-      data = @db.retrieve_by_id @column
+    def update_unused(column_data)
+      data = column_data[@column_a]
+
       @unused += data.drop @grabbed
       @grabbed = data.length
     end

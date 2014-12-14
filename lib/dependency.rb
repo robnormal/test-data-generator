@@ -10,5 +10,13 @@ module TestDataGenerator
     def ==(c)
       c.table == self.table && c.column == self.column
     end
+
+    def to_a
+      [@table, @column]
+    end
+
+    def to_s
+      @table.to_s + '.' + @column.to_s
+    end
   end
 end

@@ -53,7 +53,7 @@ module TestDataGenerator
       when :bool, :boolean
         generator = NumberGenerator.new(min: 0, max: 1)
       when :belongs_to
-        generator = BelongsToGenerator.new(options[:db], ColumnId.new(*args))
+        generator = BelongsToGenerator.new(ColumnId.new(*args))
       when :id
         # id should be unique integer
         options[:unique] = true

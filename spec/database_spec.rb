@@ -70,7 +70,7 @@ module TestDataGenerator
 
     it 'fills data as needed by dependent columns' do
       col = ColumnId.new(:table1, :col1)
-      gen = BelongsToGenerator.new(@db, col)
+      gen = BelongsToGenerator.new(col)
       @table2.add!(Column.new(:depends, gen))
 
       # if it tries to generate a row for table2, @db will
@@ -87,10 +87,10 @@ module TestDataGenerator
 
     it 'resolves complex dependencies' do
       col1 = ColumnId.new(:table1, :col1)
-      gen1 = BelongsToGenerator.new(@db, col1)
+      gen1 = BelongsToGenerator.new(col1)
 
       col2 = ColumnId.new(:table2, :col2)
-      gen2 = BelongsToGenerator.new(@db, col2)
+      gen2 = BelongsToGenerator.new(col2)
 
       @table1.add!(Column.new(:depends, gen2))
       @table2.add!(Column.new(:depends, gen1))
