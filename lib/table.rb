@@ -15,8 +15,14 @@ module TestDataGenerator
       columns.each do |c| add!(c) end
     end
 
-    def generate
-      fmap(@columns, &:generate)
+    def generate(column_data)
+      fmap(@columns) { |c| c.generate column_data }
+    end
+
+    def fulfill_need(column, num)
+      1.upto(num).map {
+        @columns[column].generate
+      }
     end
 
     # add a Column to the table
@@ -35,7 +41,7 @@ module TestDataGenerator
     end
 
     def dependencies
-      @columns.map(&:dependencies).flatten
+      @columns.values.map(&:dependencies).flatten.uniq
     end
 
     def needs(column_data)

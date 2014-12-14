@@ -124,5 +124,15 @@ module TestDataGenerator
       expect(num_needed).to be 1
     end 
   end
+
+  describe :fulfill_need do
+    it 'generates the needed number of values for the given columns' do
+      tbl = Table.new(:test, [Column.new(:id, CountGenerator.new)])
+      vals = tbl.fulfill_need(:id, 2)
+      expect(vals).to be_a(Array)
+      expect(vals.length).to eq(2)
+      expect(vals.first).to be_a(Integer)
+    end
+  end
 end
 

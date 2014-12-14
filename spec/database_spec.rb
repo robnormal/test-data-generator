@@ -1,7 +1,6 @@
 require "rspec"
 require_relative "eventually"
-require_relative "../lib/dependency"
-require_relative "../lib/database"
+require_relative "../test-data-generator"
 
 module TestDataGenerator
   # toy Generator class
@@ -13,7 +12,7 @@ module TestDataGenerator
       @current = 0
     end
 
-    def generate
+    def generate(_ = nil)
       @current += 1
     end
   end

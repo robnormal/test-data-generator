@@ -113,7 +113,15 @@ module TestDataGenerator
     def generate_for!(table)
       fulfill_needs! table
 
-      @tables[table].generate.each do |col, data|
+      t = @tables[table]
+
+      # gather depended-on data
+      data = {}
+      t.dependencies.each do |col_id|
+        data[col_id] = t
+      end
+
+      @tables[table].generate(data).each do |col, data|
         @data[table][col] << data
       end
 
@@ -130,10 +138,8 @@ module TestDataGenerator
           raise(RuntimeError, "Unable to fulfill requirements for " +
             "#{table} due to dependency on #{source.table}")
         end
-
-        num.times do
-          generate_for!(source.table)
-        end
+        
+        @tables[source.table].fulfill_need(source.column, num)
       end
     end
 
