@@ -118,11 +118,11 @@ module TestDataGenerator
       # gather depended-on data
       data = {}
       t.dependencies.each do |col_id|
-        data[col_id] = t
+        data[col_id.to_a] = retrieve_by_id(col_id)
       end
 
-      @tables[table].generate(data).each do |col, data|
-        @data[table][col] << data
+      @tables[table].generate(data).each do |col, value|
+        @data[table][col] << value
       end
 
       if space_left(table) <= 0
@@ -138,8 +138,9 @@ module TestDataGenerator
           raise(RuntimeError, "Unable to fulfill requirements for " +
             "#{table} due to dependency on #{source.table}")
         end
-        
-        @tables[source.table].fulfill_need(source.column, num)
+
+        @data[source.table][source.column] +=
+          @tables[source.table].fulfill_need(source.column, num)
       end
     end
 

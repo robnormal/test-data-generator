@@ -6,6 +6,18 @@ require_relative "../lib/dependency"
 
 
 module TestDataGenerator
+  class SimpleGenerator
+    include Generator
+    def initialize(references)
+      @refs = references
+    end
+
+    def generate(_ = nil)
+      @refs[:counter] += 1
+      @refs[:data][@refs[:counter]]
+    end
+  end
+
   describe StringGenerator do
     it 'produces strings of length <= "max_length" option, if any' do
       str = StringGenerator.new(max_length: 10)
@@ -191,18 +203,6 @@ module TestDataGenerator
     end
   end
 
-  class SimpleGenerator
-    include Generator
-    def initialize(references)
-      @refs = references
-    end
-
-    def generate(_ = nil)
-      @refs[:counter] += 1
-      @refs[:data][@refs[:counter]]
-    end
-  end
-
   context "BelongsTo" do
     include TestFixtures
 
@@ -211,7 +211,7 @@ module TestDataGenerator
       it 'selects data from a column in a Database' do
         data = [2,3,4]
         setup_belongs([2,3,4])
-        expect { @belongs.generate @foreign_a => [2,3,4]}.to eventually be 2
+        expect { @belongs.generate(@foreign_a => [2,3,4])}.to eventually be 2
       end
 
       it 'always uses the current data' do
