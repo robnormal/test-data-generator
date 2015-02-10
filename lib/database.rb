@@ -121,14 +121,7 @@ module TestDataGenerator
         data[col_id.to_a] = retrieve_by_id(col_id)
       end
 
-      @tables[table].generate(data).each do |col, value|
-        @data[table][col] << value
-      end
-
-      if space_left(table) <= 0
-        @limits.delete table
-        create_thresholds
-      end
+      generate_row(table, data)
     end
 
     def fulfill_needs!(table)
@@ -145,7 +138,7 @@ module TestDataGenerator
     end
 
     def space_left(table)
-      @limits[table] - height(table)
+      (@limits[table] || 0) - height(table)
     end
 
     def create_thresholds
@@ -170,6 +163,19 @@ module TestDataGenerator
     def check_dependencies
       if dependency_graph.has_cycles?
         raise(ArgumentError, 'tables have circular dependencies')
+      end
+    end
+
+    private
+
+    def generate_row(table, data)
+      @tables[table].generate(data).each do |col, value|
+        @data[table][col] << value
+      end
+
+      if space_left(table) <= 0
+        @limits.delete table
+        create_thresholds
       end
     end
 
