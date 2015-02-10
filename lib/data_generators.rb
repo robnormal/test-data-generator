@@ -220,6 +220,10 @@ module TestDataGenerator
     def dependencies
       [@column]
     end
+
+    def to_unique
+      UniqueBelongsToGenerator.new(@column)
+    end
   end
 
   class UniqueBelongsToGenerator < BelongsToGenerator
@@ -243,6 +247,24 @@ module TestDataGenerator
     def reset!
       @grabbed = 0
       @unused = []
+    end
+
+    def to_unique
+      self
+    end
+
+    def needs(db)
+      if @unused.empty?
+        count = [1 + @grabbed - db.retrieve_by_id(@column).length, 0].max
+
+        if count > 0
+          [[@column, count]]
+        else
+          []
+        end
+      else
+        []
+      end
     end
 
     protected

@@ -275,6 +275,16 @@ module TestDataGenerator
         setup_belongs([0,1])
         expect { @unique.iterate(3, @foreign_a => [0,1]) }.to raise_error
       end
+
+      describe :needs do
+        it 'correctly states how many additonal values are needed in the source column' do
+        setup_belongs([0,1])
+        @unique.iterate(2, @foreign_a => [0,1])
+
+        # One need should be produced; it's second element is the count, which should be 1
+        expect(@unique.needs(@db)[0][1]).to be 1
+        end
+      end
     end
   end
 end
