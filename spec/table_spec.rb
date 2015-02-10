@@ -75,12 +75,12 @@ module TestDataGenerator
       expect(tries).to be_between(0, 10)
     end
 
-    describe :generate do
+    describe :generate! do
       it 'generates a full row' do
         @dummy.add! @age
         @dummy.add_from_spec!(:tries, :number, [max: 10])
         10.times do
-          test_row(@dummy.generate({}))
+          test_row(@dummy.generate!({}))
         end
       end
     end
@@ -89,7 +89,7 @@ module TestDataGenerator
       it 'accepts an array of columns as second argument' do
         users = Table.new('users', [Column.new(:id, CountGenerator.new)])
 
-        row = users.generate({})
+        row = users.generate!({})
 
         expect(row[:id]).to be_a(Fixnum)
       end
@@ -128,7 +128,13 @@ module TestDataGenerator
   describe :fulfill_need do
     it 'generates the needed number of values for the given columns' do
       tbl = Table.new(:test, [Column.new(:id, CountGenerator.new)])
-      vals = tbl.fulfill_need(:id, 2)
+      start = tbl.retrieve(:id).length
+
+      tbl.fulfill_need!(:id, 2)
+      ids_1 = tbl.retrieve(:id)
+
+      vals = ids_1.drop(start)
+
       expect(vals).to be_a(Array)
       expect(vals.length).to eq(2)
       expect(vals.first).to be_a(Integer)

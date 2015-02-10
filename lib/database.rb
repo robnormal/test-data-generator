@@ -29,8 +29,8 @@ module TestDataGenerator
       add_tables! tables_limits
     end
 
-    def retrieve(cat, subcat)
-      @data[cat][subcat] || []
+    def retrieve(table, column)
+      @tables[table].retrieve(column)
     end
 
     def retrieve_by_id(column_id)
@@ -38,11 +38,11 @@ module TestDataGenerator
     end
 
     def columns(table)
-      @data[table].first && @data[table].first.keys || []
+      @tables[table].columns
     end
 
     def height(table)
-      @data[table].empty? ? 0 : @data[table].first[1].length
+      @tables[table].height
     end
 
     def add_table!(table, limit)
@@ -69,31 +69,28 @@ module TestDataGenerator
     end
 
     def reset!
-      @data = StrictHash.new { |table|  "No such table: #{table}" }
-
       @tables.each do |name, table|
-        @data[name] = {}
-        table.column_names.each do
-          |col| @data[name][col] = []
-        end
+        table.reset!
       end
     end
 
     # yield successive rows to block, and delete the row
-    def offload!(table)
-      columns = @data[table]
-      len = height table
-
-      len.times do
-        yield fmap(columns, &:shift)
-      end
+    def offload!(table, &blk)
+      @tables[table].offload!(&blk)
     end
 
     def offload_all!
       output = {}
-      fmap_with_keys(@data) { |cat, column|
-        to_enum(:offload!, cat).to_a
-      }
+
+      fmap(@tables) do |t|
+        output[t.name] = []
+
+        t.offload! { |row|
+          output[t.name] << row
+        }
+      end
+
+      output
     end
 
 
@@ -153,8 +150,7 @@ module TestDataGenerator
             "#{table} due to dependency on #{source.table}")
         end
 
-        @data[source.table][source.column] +=
-          @tables[source.table].fulfill_need(source.column, num)
+        @tables[source.table].fulfill_need!(source.column, num)
       end
     end
 
@@ -172,9 +168,7 @@ module TestDataGenerator
 
 
     def generate_row!(table, data)
-      @tables[table].generate(data).each do |col, value|
-        @data[table][col] << value
-      end
+      @tables[table].generate!(data)
 
       if space_left(table) <= 0
         @limits.delete table

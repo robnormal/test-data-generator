@@ -81,7 +81,7 @@ module TestDataGenerator
       db = TestDataGenerator.from_config(config)
       expect { db.generate_all! }.not_to raise_error
 
-      srand(1111) # set comes out wrong
+      srand(1112) # set comes out wrong
 
       db = TestDataGenerator.from_config(config)
       db.generate_all!
