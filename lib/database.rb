@@ -29,24 +29,32 @@ module TestDataGenerator
       add_tables! tables_limits
     end
 
-    def add_table!(table, limit)
-      add_table_raw!(table, limit)
-      update_table_data
-    end
-
-    def add_tables!(tables_limits)
-      tables_limits.each do |table, limit|
-        add_table_raw!(table, limit)
-      end
-      update_table_data
-    end
-
     def retrieve(cat, subcat)
       @data[cat][subcat] || []
     end
 
     def retrieve_by_id(column_id)
       retrieve(column_id.table, column_id.column)
+    end
+
+    def columns(table)
+      @data[table].first && @data[table].first.keys || []
+    end
+
+    def height(table)
+      @data[table].empty? ? 0 : @data[table].first[1].length
+    end
+
+    def add_table!(table, limit)
+      add_table_raw!(table, limit)
+      update_table_data!
+    end
+
+    def add_tables!(tables_limits)
+      tables_limits.each do |table, limit|
+        add_table_raw!(table, limit)
+      end
+      update_table_data!
     end
 
     def generate!
@@ -72,17 +80,13 @@ module TestDataGenerator
     end
 
     # yield successive rows to block, and delete the row
-    def offload!(category)
-      columns = @data[category]
-      len = height category
+    def offload!(table)
+      columns = @data[table]
+      len = height table
 
       len.times do
         yield fmap(columns, &:shift)
       end
-    end
-
-    def columns(category)
-      @data[category].first && @data[category].first.keys || []
     end
 
     def offload_all!
@@ -92,62 +96,12 @@ module TestDataGenerator
       }
     end
 
-    def height(category)
-      @data[category].empty? ? 0 : @data[category].first[1].length
-    end
-
 
     private
 
-    def add_table_raw!(table, limit)
-      @tables[table.name] = table
-      @limits[table.name] = limit
-    end
-
-    def update_table_data
-      check_dependencies
-      create_thresholds
-      reset!
-    end
-
-    def generate_for!(table)
-      fulfill_needs! table
-
-      t = @tables[table]
-
-      # gather depended-on data
-      data = {}
-      t.dependencies.each do |col_id|
-        data[col_id.to_a] = retrieve_by_id(col_id)
-      end
-
-      generate_row(table, data)
-    end
-
-    def fulfill_needs!(table)
-      @tables[table].needs(self).each do |source, num|
-        # If row cannot be created, needs are unfulfillable, so bail
-        if space_left(source.table) < num
-          raise(RuntimeError, "Unable to fulfill requirements for " +
-            "#{table} due to dependency on #{source.table}")
-        end
-
-        @data[source.table][source.column] +=
-          @tables[source.table].fulfill_need(source.column, num)
-      end
-    end
 
     def space_left(table)
       (@limits[table] || 0) - height(table)
-    end
-
-    def create_thresholds
-      @table_picker =
-        if @limits.empty?
-          Maybe.nothing
-        else
-          Maybe.just(WeigtedPicker.new @limits)
-        end
     end
 
     def dependency_graph
@@ -166,16 +120,65 @@ module TestDataGenerator
       end
     end
 
+    def add_table_raw!(table, limit)
+      @tables[table.name] = table
+      @limits[table.name] = limit
+    end
+
+    def update_table_data!
+      check_dependencies
+      create_thresholds!
+      reset!
+    end
+
+    def generate_for!(table)
+      fulfill_needs! table
+
+      t = @tables[table]
+
+      # gather depended-on data
+      data = {}
+      t.dependencies.each do |col_id|
+        data[col_id.to_a] = retrieve_by_id(col_id)
+      end
+
+      generate_row!(table, data)
+    end
+
+    def fulfill_needs!(table)
+      @tables[table].needs(self).each do |source, num|
+        # If row cannot be created, needs are unfulfillable, so bail
+        if space_left(source.table) < num
+          raise(RuntimeError, "Unable to fulfill requirements for " +
+            "#{table} due to dependency on #{source.table}")
+        end
+
+        @data[source.table][source.column] +=
+          @tables[source.table].fulfill_need(source.column, num)
+      end
+    end
+
+    def create_thresholds!
+      @table_picker =
+        if @limits.empty?
+          Maybe.nothing
+        else
+          Maybe.just(WeigtedPicker.new @limits)
+        end
+    end
+
+
     private
 
-    def generate_row(table, data)
+
+    def generate_row!(table, data)
       @tables[table].generate(data).each do |col, value|
         @data[table][col] << value
       end
 
       if space_left(table) <= 0
         @limits.delete table
-        create_thresholds
+        create_thresholds!
       end
     end
 
