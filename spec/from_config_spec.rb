@@ -66,5 +66,31 @@ module TestDataGenerator
 
       expect(book_user_ids).to be_subset(user_ids)
     end
+
+    it 'accepts a "unique" option for belongs_to columns' do
+      config = {
+        users: [3, [
+          [:id],
+          [:name, :string, [:max_length => 20]]
+        ]],
+        books: [3, [
+          [:user_id, :belongs_to, [:users, :id], :unique => true]
+        ]]
+      }
+
+      db = TestDataGenerator.from_config(config)
+      expect { db.generate_all! }.not_to raise_error
+
+      srand(1111) # set comes out wrong
+
+      db = TestDataGenerator.from_config(config)
+      db.generate_all!
+      data = db.offload_all!
+
+      user_ids = Set.new(data[:users].map { |user| user[:id] })
+      book_user_ids = Set.new(data[:books].map { |book| book[:user_id] })
+
+      expect(book_user_ids).to eq(user_ids)
+    end
   end
 end
