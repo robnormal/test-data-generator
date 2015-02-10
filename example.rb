@@ -1,6 +1,6 @@
-require_relative 'test_data_generator'
+require_relative 'test-data-generator'
 
-a = TestDataGenerator::from_config 'publishing', {
+a = TestDataGenerator::from_config({
   authors: [3, [
     [:id],
     [:first_name, :forgery, [:name, :first_name]],
@@ -21,7 +21,7 @@ a = TestDataGenerator::from_config 'publishing', {
     [:author_id, :belongs_to, [:authors, :id], :unique => true],
     [:number,    :string,     [:length => 10, :chars => ('0'..'9')]]
   ]]
-}
+})
 
 a.generate_all!
 p a.offload_all!
