@@ -36,8 +36,11 @@ module TestDataGenerator
     def generate!(db)
       row = {}
       @column_names.each do |c|
-        row[c] = @columns[c].generate(db)
-        @data[c] << row[c]
+        # don't generate data for this column if we already have what we need
+        if @data[c].length <= @height
+          row[c] = @columns[c].generate(db)
+          @data[c] << row[c]
+        end
       end
 
       @height += 1

@@ -80,11 +80,6 @@ module TestDataGenerator
 
       db = TestDataGenerator.from_config(config)
       expect { db.generate_all! }.not_to raise_error
-
-      srand(1112) # set comes out wrong
-
-      db = TestDataGenerator.from_config(config)
-      db.generate_all!
       data = db.offload_all!
 
       user_ids = Set.new(data[:users].map { |user| user[:id] })
