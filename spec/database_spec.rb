@@ -68,6 +68,18 @@ module TestDataGenerator
       end
     end
 
+    describe :table_names do
+      it 'returns the names of the tables' do
+        expect(@db.table_names).to contain_exactly(:table1, :table2)
+      end
+    end
+
+    describe :column_names do
+      it 'returns the names of the columns in table' do
+        expect(@db.column_names(:table2)).to contain_exactly(:col2)
+      end
+    end
+
     it 'fills data as needed by dependent columns' do
       col = ColumnId.new(:table1, :col1)
       gen = BelongsToGenerator.new(col)

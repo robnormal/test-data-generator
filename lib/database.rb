@@ -29,6 +29,10 @@ module TestDataGenerator
       add_tables! tables_limits
     end
 
+    def table_names
+      @tables.keys
+    end
+
     def retrieve(table, column)
       @tables[table].retrieve(column)
     end
@@ -41,7 +45,7 @@ module TestDataGenerator
       retrieve(column_id.table, column_id.column)
     end
 
-    def columns(table)
+    def column_names(table)
       @tables[table].columns
     end
 

@@ -67,6 +67,10 @@ module TestDataGenerator
       end
     end
 
+    def columns
+      @columns.keys
+    end
+
     def column(column_name)
       @columns[column_name]
     end

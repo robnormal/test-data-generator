@@ -24,5 +24,19 @@ a = TestDataGenerator::from_config({
 })
 
 a.generate_all!
-p a.offload_all!
+a.table_names.each do |table|
+  cols = a.column_names(table)
+
+  puts table
+  puts cols.join("\t")
+
+  a.offload!(table) do |row|
+    cols.each do |col|
+      print(row[col].to_s + "\t")
+    end
+    puts
+  end
+
+  puts
+end
 
