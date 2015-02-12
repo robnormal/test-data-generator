@@ -6,18 +6,6 @@ require_relative "../lib/dependency"
 
 
 module TestDataGenerator
-  class SimpleGenerator
-    include Generator
-    def initialize(references)
-      @refs = references
-    end
-
-    def generate(_ = nil)
-      @refs[:counter] += 1
-      @refs[:data][@refs[:counter]]
-    end
-  end
-
   describe StringGenerator do
     it 'produces strings of length <= "max_length" option, if any' do
       str = StringGenerator.new(max_length: 10)
@@ -49,6 +37,8 @@ module TestDataGenerator
   end
 
   describe NumberGenerator do
+    include TestFixtures
+
     it 'produces integers <= "max" option' do
       num = NumberGenerator.new(max: 2)
       num.iterate(10).each do |x|
@@ -74,13 +64,19 @@ module TestDataGenerator
       end
     end
 
-    it 'produces integers >= current last value in "greater_than" list' do
-      val_list = [0]
-      greater = NumberGenerator.new(max: 3, greater_than: val_list)
+    it 'produces integers >= current last value in "greater_than" column' do
+      setup_greater_than([1,3,7])
 
-      expect(greater.iterate(10).all? { |x| x >= 0 && x <= 3 }).to be true
-      val_list << 2
-      expect(greater.iterate(10).all? { |x| x >= 2 && x <= 3 }).to be true
+      num1_id = [:numbers, :num1]
+      greater = NumberGenerator.new(max: 10, greater_than: num1_id)
+
+      input = { num1_id => [1,3,7] }
+      data = 1.upto(10).map { greater.generate(input) }
+      expect(data.all? { |x| x >= 7 && x <= 10 }).to be true
+
+      input = { num1_id => [1,3,8] }
+      data = 1.upto(10).map { greater.generate(input) }
+      expect(data.all? { |x| x >= 8 && x <= 10 }).to be true
     end
   end
 

@@ -87,5 +87,23 @@ module TestDataGenerator
 
       expect(book_user_ids).to eq(user_ids)
     end
+
+    it 'creates greater_than columns, greater than concurrent value in another column' do
+      config = {
+        times: [10, [
+          [:created_at, :datetime],
+          [:updated_at, :datetime, [:greater_than => [:times, :created_at]]]
+        ]]
+      }
+
+      db = TestDataGenerator.from_config(config)
+      expect { db.generate_all! }.not_to raise_error
+      data = db.offload_all!
+
+      data[:times].each do |row|
+        expect(row[:updated_at]).to be > row[:created_at]
+      end
+    end
+
   end
 end

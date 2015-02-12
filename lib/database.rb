@@ -33,6 +33,10 @@ module TestDataGenerator
       @tables[table].retrieve(column)
     end
 
+    def current(table, column)
+      retrieve(table, column).last
+    end
+
     def retrieve_by_id(column_id)
       retrieve(column_id.table, column_id.column)
     end

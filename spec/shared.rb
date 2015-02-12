@@ -2,6 +2,18 @@ require "rspec"
 require_relative "../test-data-generator"
 
 module TestDataGenerator
+  class SimpleGenerator
+    include Generator
+    def initialize(references)
+      @refs = references
+    end
+
+    def generate(_ = nil)
+      @refs[:counter] += 1
+      @refs[:data][@refs[:counter]]
+    end
+  end
+
   module TestFixtures
     def setup_belongs(data)
       @refs = {}
@@ -30,6 +42,18 @@ module TestDataGenerator
       @db.reset!
       reset_belongs_gen(data)
       data.length.times { @db.generate! }
+    end
+
+    def setup_greater_than(data)
+      @refs = {}
+      reset_belongs_gen data
+
+      @num1 = Column.new(:num1, SimpleGenerator.new(@refs))
+
+      @numbers = Table.new(:numbers)
+      @numbers.add! @num1
+      @db = Database.new({ @numbers => 10 })
+      @db.add_table!(@numbers, 3)
     end
   end
 end

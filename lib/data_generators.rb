@@ -97,12 +97,20 @@ module TestDataGenerator
 
       @max = max
       @min = min
-      @greater_than = greater_than
+
+      if greater_than
+        @greater_than = greater_than
+        @greater_than_id = ColumnId.new(*greater_than)
+      end
     end
 
-    def generate(_ = nil)
+    def dependencies
+      @greater_than ? [@greater_than_id] : []
+    end
+
+    def generate(col_data = nil)
       if @greater_than
-        current = @greater_than.last
+        current = (col_data[@greater_than] || []).last || 0
 
         # enforce min requirement, if present
         min = if @min && @min > current then @min else current end
