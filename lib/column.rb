@@ -24,54 +24,72 @@ module TestDataGenerator
     # [name] name to give to the Column
     # [type] Symbol designating Column type
     # [args] Additional arguments, depending on type
-    def self.from_spec(name, type = nil, args = [], options = {})
+    def self.from_spec(name, type_sym = nil, args = [], options = {})
       name = name.to_sym
+      type = spec_type(type_sym, name)
+      generator = spec_generator(type, args)
 
+      if type == :id
+        # id should be unique integer
+        options[:unique] = true
+      end
+
+      generator = use_spec_options(generator, options)
+
+      Column.new(name.to_sym, generator)
+    end
+
+    def self.spec_type(type, name)
       # name-based type magic
       case name
       when :id
-        type = :id
+        :id
       when /_at$/
-        type = :datetime
+        :datetime
+      else
+        type
       end
+    end
 
+    def self.spec_generator(type, args)
       case type
       when :string
-        generator = StringGenerator.new(*args)
+        StringGenerator.new(*args)
       when :number
-        generator = NumberGenerator.new(*args)
+        NumberGenerator.new(*args)
       when :datetime
-        generator = DateTimeGenerator.new(*args)
+        DateTimeGenerator.new(*args)
       when :forgery
-        generator = ForgeryGenerator.new(*args)
+        ForgeryGenerator.new(*args)
       when :words
-        generator = WordGenerator.new(*args)
+        WordGenerator.new(*args)
       when :url
-        generator = UrlGenerator.new(*args)
+        UrlGenerator.new(*args)
       when :enum
-        generator = EnumGenerator.new(*args)
+        EnumGenerator.new(*args)
       when :bool, :boolean
-        generator = NumberGenerator.new(min: 0, max: 1)
+        NumberGenerator.new(min: 0, max: 1)
       when :belongs_to
-        generator = BelongsToGenerator.new(ColumnId.new(*args))
+        BelongsToGenerator.new(ColumnId.new(*args))
       when :id
-        # id should be unique integer
-        options[:unique] = true
-        generator = NumberGenerator.new(min: 1, max: 2147483647)
+        NumberGenerator.new(min: 1, max: 2147483647)
       else
         raise ArgumentError, "Unknown generator type: #{type}"
       end
+    end
 
-      if options[:unique]
+
+    def self.use_spec_options(generator, opts)
+      if opts[:unique]
         generator = generator.to_unique
       end
 
       # null must come after unique, since NULL is not a "unique" value
-      if options[:null]
-        generator = NullGenerator.new(generator, options[:null])
+      if opts[:null]
+        generator = NullGenerator.new(generator, opts[:null])
       end
 
-      Column.new(name.to_sym, generator)
+      generator
     end
   end
 
