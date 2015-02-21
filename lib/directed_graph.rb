@@ -69,6 +69,7 @@ class DirectedGraph
     @post
   end
 
+  # depth-first search
   def dfs
     unless @has_dfs
       @unsearched = @nodes.keys
@@ -81,19 +82,20 @@ class DirectedGraph
     end
   end
 
-  def dfs_node(start, time)
-    @pre[start] = time
-    @unsearched.delete start
+  # depth-first search, starting from "node", at "time"
+  def dfs_node(node, time)
+    @pre[node] = time
+    @unsearched.delete node
 
-    @nodes[start].each do |node|
+    @nodes[node].each do |node|
       unless @pre.key?(node)
         time += 1
         @pre[node] = time
         time = dfs_node(node, time) + 1
       end
     end
-    @post[start] = time
-    @sorted << start
+    @post[node] = time
+    @sorted << node
 
     time
   end
