@@ -66,8 +66,7 @@ module TestDataGenerator
     end
 
     def generate!
-      # pick table at random (weighted odds), and return what it generates
-      @table_picker.fmap(&:pick).fmap do |table|
+      pick_table.fmap do |table|
         generate_for! table
       end
     end
@@ -184,6 +183,11 @@ module TestDataGenerator
         @limits.delete table
         create_thresholds!
       end
+    end
+
+    # pick table at random (weighted odds)
+    def pick_table
+      @table_picker.fmap(&:pick)
     end
 
   end

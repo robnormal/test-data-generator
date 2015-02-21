@@ -8,8 +8,8 @@ class DirectedGraph
   def initialize(edges = [])
     @edges = []
     @nodes = {}
-    @pre = {}
-    @post = {}
+    @pre = SearchTime.new
+    @post = SearchTime.new
     @sorted = []
 
     edges.each do |edge|
@@ -38,16 +38,6 @@ class DirectedGraph
     @edges.length
   end
 
-  def pre
-    dfs
-    @pre
-  end
-
-  def post
-    dfs
-    @post
-  end
-
   def sorted
     dfs
     @sorted
@@ -69,6 +59,16 @@ class DirectedGraph
     end
   end
 
+  def pre
+    dfs
+    @pre
+  end
+
+  def post
+    dfs
+    @post
+  end
+
   def dfs
     unless @has_dfs
       @unsearched = @nodes.keys
@@ -86,7 +86,7 @@ class DirectedGraph
     @unsearched.delete start
 
     @nodes[start].each do |node|
-      if @pre[node].nil?
+      unless @pre.key?(node)
         time += 1
         @pre[node] = time
         time = dfs_node(node, time) + 1
@@ -99,7 +99,17 @@ class DirectedGraph
   end
 
   def is_backward(edge)
-    @pre[edge.to] < @pre[edge.from] && @post[edge.to] > @post[edge.from]
+    @pre.before?(edge.to, edge.from) && @post.after?(edge.to, edge.from)
+  end
+
+  class SearchTime < Hash
+    def before?(a, b)
+      self[a] < self[b]
+    end
+
+    def after?(a, b)
+      self[a] > self[b]
+    end
   end
 end
 

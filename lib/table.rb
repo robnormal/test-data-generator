@@ -89,16 +89,12 @@ module TestDataGenerator
     end
 
     def needs(column_data)
-      @columns.values.inject([]) { |memo, c|
-        memo + (c.needs column_data)
-      }
+      @columns.map { |_, c| c.needs(column_data) }.flatten(1)
     end
 
     def dependencies_as_edges
-      @columns.values.map { |c|
-        c.dependencies.map { |col_id|
-          GraphEdge.new(ColumnId.new(@name, c.name), col_id)
-        }
+      @columns.map { |_, c|
+        column_deps_as_edges(c)
       }.flatten
     end
 
@@ -113,6 +109,14 @@ module TestDataGenerator
 
     def generate_column!(column, db)
       @data[column] << @columns[column].generate(db)
+    end
+
+    def column_deps_as_edges(column)
+      my_id = ColumnId.new(@name, column.name)
+
+      column.dependencies.map { |col_id|
+        GraphEdge.new(my_id, col_id)
+      }
     end
 
   end
