@@ -1,7 +1,7 @@
 require_relative 'test-data-generator'
 
 a = TestDataGenerator::from_config({
-  authors: [3, [
+  authors: [5, [
     [:id],
     [:first_name, :forgery, [:name, :first_name]],
     [:last_name,  :forgery, [:name, :last_name]],
@@ -10,14 +10,14 @@ a = TestDataGenerator::from_config({
     [:updated_at, :datetime, [:greater_than => [:authors, :created_at]]]
   ]],
 
-  books: [3, [
+  books: [10, [
     [:id],
     [:author_id, :belongs_to, [:authors, :id]],
     [:title,     :words,      [2..4]],
     [:isbn,      :string,     [:length => 20]]
   ]],
 
-  phone_numbers: [3, [
+  phone_numbers: [4, [
     [:author_id, :belongs_to, [:authors, :id], :unique => true],
     [:number,    :string,     [:length => 10, :chars => ('0'..'9')]]
   ]]
