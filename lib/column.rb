@@ -20,6 +20,14 @@ module TestDataGenerator
       @name = name.to_sym
     end
 
+    def dependency_edges(my_table)
+      my_id = ColumnId.new(my_table, name)
+
+      dependencies.map { |col_id|
+        GraphEdge.new(my_id, col_id)
+      }
+    end
+
     # [table] Table this Column will belong to
     # [name] name to give to the Column
     # [type] Symbol designating Column type
