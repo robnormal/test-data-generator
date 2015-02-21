@@ -39,6 +39,8 @@ module TestDataGenerator
       Column.new(name.to_sym, generator)
     end
 
+    private
+
     def self.spec_type(type, name)
       # name-based type magic
       case name

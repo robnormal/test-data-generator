@@ -23,13 +23,9 @@ class DirectedGraph
 
   def add_edge!(edge)
     @edges << edge
+    initialize_nodes(edge.from)
+    initialize_nodes(edge.to)
 
-    if !@nodes[edge.from]
-      @nodes[edge.from] = []
-    end
-    if !@nodes[edge.to]
-      @nodes[edge.to] = []
-    end
     @nodes[edge.from] << edge.to
     @has_dfs = false
   end
@@ -61,11 +57,18 @@ class DirectedGraph
     dfs
     # look for "backward" edge
     @edges.any? { |edge|
-      @pre[edge.to] < @pre[edge.from] && @post[edge.to] > @post[edge.from]
+      is_backward(edge)
     }
   end
 
   private
+
+  def initialize_nodes(node)
+    if !@nodes[node]
+      @nodes[node] = []
+    end
+  end
+
   def dfs
     unless @has_dfs
       @unsearched = @nodes.keys
@@ -93,6 +96,10 @@ class DirectedGraph
     @sorted << start
 
     time
+  end
+
+  def is_backward(edge)
+    @pre[edge.to] < @pre[edge.from] && @post[edge.to] > @post[edge.from]
   end
 end
 

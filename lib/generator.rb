@@ -21,10 +21,10 @@ module TestDataGenerator
     # @param Database
     #   Database containing data for depended-on columns
     # @return [Array<Array(ColumnId, Integer)>]
-    def needs(column_data)
+    def needs(db)
       needed = []
       dependencies.each { |d|
-        if column_data.retrieve_by_id(d).empty?
+        if db.retrieve_by_id(d).empty?
           needed << [d, 1]
         end
       }

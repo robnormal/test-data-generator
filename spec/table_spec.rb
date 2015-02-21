@@ -130,7 +130,7 @@ module TestDataGenerator
       tbl = Table.new(:test, [Column.new(:id, CountGenerator.new)])
       start = tbl.retrieve(:id).length
 
-      tbl.fulfill_need!(:id, 2)
+      tbl.fulfill_need!(:id, 2, Database.new({ tbl => 5}))
       ids_1 = tbl.retrieve(:id)
 
       vals = ids_1.drop(start)

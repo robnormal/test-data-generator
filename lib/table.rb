@@ -16,10 +16,10 @@ module TestDataGenerator
       reset!
     end
 
-    def fulfill_need!(column, num)
-      1.upto(num).each {
-        @data[column] << @columns[column].generate
-      }
+    def fulfill_need!(column, num, db)
+      num.times do
+        generate_column!(column, db)
+      end
     end
 
     # add a Column to the table
@@ -34,17 +34,16 @@ module TestDataGenerator
     end
 
     def generate!(db)
-      row = {}
       @column_names.each do |c|
         # don't generate data for this column if we already have what we need
         if @data[c].length <= @height
-          row[c] = @columns[c].generate(db)
-          @data[c] << row[c]
+          generate_column!(c, db)
         end
       end
 
       @height += 1
-      row
+
+      row(@height - 1)
     end
 
     def offload!
@@ -79,6 +78,12 @@ module TestDataGenerator
       @data[col_name]
     end
 
+    def row(num)
+      Hash[
+        @column_names.map { |c| [c, retrieve(c)[num]] }
+      ]
+    end
+
     def dependencies
       @columns.values.map(&:dependencies).flatten.uniq
     end
@@ -104,6 +109,10 @@ module TestDataGenerator
     def add_raw!(column)
       @columns[column.name] = column
       @column_names << column.name
+    end
+
+    def generate_column!(column, db)
+      @data[column] << @columns[column].generate(db)
     end
 
   end

@@ -152,13 +152,15 @@ module TestDataGenerator
 
     def fulfill_needs!(table)
       @tables[table].needs(self).each do |source, num|
-        # If row cannot be created, needs are unfulfillable, so bail
-        if space_left(source.table) < num
-          raise(RuntimeError, "Unable to fulfill requirements for " +
-            "#{table} due to dependency on #{source.table}")
-        end
+        require_space(source.table, num, table)
+        @tables[source.table].fulfill_need!(source.column, num, self)
+      end
+    end
 
-        @tables[source.table].fulfill_need!(source.column, num)
+    def require_space(source, num, target)
+      if space_left(source) < num
+        raise(RuntimeError, "Unable to fulfill requirements for " +
+          "#{target} due to dependency on #{table}")
       end
     end
 
