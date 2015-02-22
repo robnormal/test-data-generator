@@ -30,7 +30,7 @@ module TestDataGenerator
 
     # add a Column using Column.from_spec
     def add_from_spec!(column_name, type, args = [], options = {})
-      add! Column.from_spec(column_name, type, args, options)
+      add! ConfigProcess.make_column(column_name, type, args, options)
     end
 
     def generate!(db)
