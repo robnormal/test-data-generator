@@ -77,9 +77,9 @@ module TestDataGenerator
       when :string
         StringGenerator.new(*args)
       when :number
-        NumberGenerator.new(*args)
+        self.make_greater_than(NumberGenerator.new(*args), args)
       when :datetime
-        DateTimeGenerator.new(*args)
+        self.make_greater_than(DateTimeGenerator.new(*args), args)
       when :forgery
         ForgeryGenerator.new(*args)
       when :words
@@ -99,6 +99,13 @@ module TestDataGenerator
       end
     end
 
+    def self.make_greater_than(gen, args)
+      if args.first && args.first[:greater_than]
+        GreaterThanGenerator.new(gen, args.first[:greater_than])
+      else
+        gen
+      end
+    end
 
     def self.use_spec_options(generator, opts)
       if opts[:unique]

@@ -84,9 +84,22 @@ module TestDataGenerator
     end
   end
 
-  class NumberGenerator
+  class BaseNumberGenerator
     include Generator
 
+    def initialize(args)
+      @max = args[:max]
+      @min = args[:min]
+
+      post_initialize(args)
+    end
+
+    def generate(data = nil)
+      rand_between(minimum(data), maximum(data))
+    end
+  end
+
+  class NumberGenerator < BaseNumberGenerator
     # [max] maximum value
     # [min] minimum value
     # [greater_than] Column data in Database object
@@ -97,28 +110,50 @@ module TestDataGenerator
 
       @max = max
       @min = min
+    end
 
-      if greater_than
-        @greater_than = greater_than
-        @greater_than_id = ColumnId.new(*greater_than)
+    def minimum(data = nil)
+      @min
+    end
+
+    def maximum(data = nil)
+      @max
+    end
+  end
+
+  class DateTimeGenerator < NumberGenerator
+    def initialize(options = {})
+      options[:max] ||= Time.now().to_i
+
+      super(options)
+    end
+  end
+
+  class GreaterThanGenerator < BaseNumberGenerator
+    def initialize(num_gen, column)
+      @gen = num_gen
+      @col = column
+      @col_id = ColumnId.new(*column)
+    end
+
+    def minimum(data = nil)
+      current = (data[@col] || []).last || 0
+      min = @gen.minimum(data)
+
+      # enforce min requirement, if present
+      if min > current
+        min
+      else
+        current
       end
+    end
+
+    def maximum(data = nil)
+      @gen.maximum(data)
     end
 
     def dependencies
-      @greater_than ? [@greater_than_id] : []
-    end
-
-    def generate(col_data = nil)
-      if @greater_than
-        current = (col_data[@greater_than] || []).last || 0
-
-        # enforce min requirement, if present
-        min = if @min && @min > current then @min else current end
-      else
-        min = @min
-      end
-
-      rand_between(min, @max)
+      @gen.dependencies + [@col_id]
     end
   end
 
@@ -132,14 +167,6 @@ module TestDataGenerator
     def generate(_ = nil)
       domain = @forgery.send :domain_name
       'http://' + domain
-    end
-  end
-
-  class DateTimeGenerator < NumberGenerator
-    def initialize(options = {})
-      options[:max] ||= Time.now().to_i
-
-      super(options)
     end
   end
 

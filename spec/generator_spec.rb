@@ -37,8 +37,6 @@ module TestDataGenerator
   end
 
   describe NumberGenerator do
-    include TestFixtures
-
     it 'produces integers <= "max" option' do
       num = NumberGenerator.new(max: 2)
       num.iterate(10).each do |x|
@@ -63,12 +61,15 @@ module TestDataGenerator
         expect(x).to be >= 0
       end
     end
+  end
 
+  describe GreaterThanGenerator do
+    include TestFixtures
     it 'produces integers >= current last value in "greater_than" column' do
       setup_greater_than([1,3,7])
 
       num1_id = [:numbers, :num1]
-      greater = NumberGenerator.new(max: 10, greater_than: num1_id)
+      greater = GreaterThanGenerator.new(NumberGenerator.new(max: 10), num1_id)
 
       input = { num1_id => [1,3,7] }
       data = 1.upto(10).map { greater.generate(input) }
