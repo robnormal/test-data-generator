@@ -151,9 +151,13 @@ module TestDataGenerator
 
     def fulfill_needs!(table)
       @tables[table].needs(self).each do |source, num|
-        require_space(source.table, num, table)
-        @tables[source.table].fulfill_need!(source.column, num, self)
+        fulfill_need!(source, num, table)
       end
+    end
+
+    def fulfill_need!(source_id, num, target)
+      require_space(source_id.table, num, target)
+      @tables[source_id.table].fulfill_need!(source_id.column, num, self)
     end
 
     def require_space(source, num, target)
@@ -171,10 +175,6 @@ module TestDataGenerator
           Maybe.just(WeigtedPicker.new @limits)
         end
     end
-
-
-    private
-
 
     def generate_row!(table, data)
       @tables[table].generate!(data)
