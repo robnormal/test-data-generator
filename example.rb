@@ -30,7 +30,7 @@ a.table_names.each do |table|
   puts table
   puts cols.join("\t")
 
-  a.offload!(table) do |row|
+  a.each_row(table) do |row|
     cols.each do |col|
       print(row[col].to_s + "\t")
     end
