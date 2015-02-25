@@ -56,19 +56,19 @@ module TestDataGenerator
     end
 
     # yield successive rows to block, and delete the row
-    def offload!(table, &blk)
-      @tables[table].offload!(&blk)
+    def each_row(table, &blk)
+      @tables[table].each(&blk)
     end
 
-    def offload_all!
+    def dump
       output = {}
 
-      fmap(@tables) do |t|
-        output[t.name] = []
+      table_names.map do |t|
+        output[t] = []
 
-        t.offload! { |row|
-          output[t.name] << row
-        }
+        each_row(t) do |row|
+          output[t] << row
+        end
       end
 
       output

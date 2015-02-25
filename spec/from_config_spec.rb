@@ -18,7 +18,7 @@ module TestDataGenerator
 
       @get_data = -> do
         @db.generate_all!
-        @db.offload_all!
+        @db.dump
       end
     end
 
@@ -59,7 +59,7 @@ module TestDataGenerator
 
       db = TestDataGenerator.from_config(config)
       db.generate_all!
-      data = db.offload_all!
+      data = db.dump
 
       user_ids = Set.new(data[:users].map { |user| user[:id] })
       book_user_ids = Set.new(data[:books].map { |book| book[:user_id] })
@@ -80,7 +80,7 @@ module TestDataGenerator
 
       db = TestDataGenerator.from_config(config)
       expect { db.generate_all! }.not_to raise_error
-      data = db.offload_all!
+      data = db.dump
 
       user_ids = Set.new(data[:users].map { |user| user[:id] })
       book_user_ids = Set.new(data[:books].map { |book| book[:user_id] })
@@ -98,7 +98,7 @@ module TestDataGenerator
 
       db = TestDataGenerator.from_config(config)
       expect { db.generate_all! }.not_to raise_error
-      data = db.offload_all!
+      data = db.dump
 
       data[:times].each do |row|
         expect(row[:updated_at]).to be > row[:created_at]

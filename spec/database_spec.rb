@@ -131,12 +131,12 @@ module TestDataGenerator
       end
     end
 
-    describe :offload! do
-      it 'yields data from category as rows, in order appended, then deletes that data' do
+    describe :each_row do
+      it 'yields data from category as rows, in order appended' do
         @db.generate_all!
 
         table1 = []
-        @db.offload!(:table1) do |row|
+        @db.each_row(:table1) do |row|
           table1 << row
         end
 
@@ -145,11 +145,11 @@ module TestDataGenerator
       end
     end
 
-    describe :offload_all! do
+    describe :dump do
       it 'yields all rows from all categories, in a Hash' do
         @db.generate_all!
 
-        data = @db.offload_all!
+        data = @db.dump
 
         expect(data[:table1].length).to eq(3)
         expect(data[:table1][1][:col1]).to eq(2)

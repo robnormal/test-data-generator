@@ -41,14 +41,9 @@ module TestDataGenerator
       row(@height - 1)
     end
 
-    def offload!
-      @height.times do
-        row = {}
-        @column_names.each do |col|
-          row[col] = @data[col].shift
-        end
-
-        yield row
+    def each
+      @height.times do |i|
+        yield row(i)
       end
     end
 
