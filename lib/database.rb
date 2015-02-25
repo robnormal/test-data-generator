@@ -39,13 +39,6 @@ module TestDataGenerator
       update_table_data!
     end
 
-    def add_tables!(tables_limits)
-      tables_limits.each do |table, limit|
-        add_table_raw!(table, limit)
-      end
-      update_table_data!
-    end
-
     def generate!
       pick_table.fmap do |table|
         generate_for! table
@@ -84,6 +77,13 @@ module TestDataGenerator
 
     private
 
+
+    def add_tables!(tables_limits)
+      tables_limits.each do |table, limit|
+        add_table_raw!(table, limit)
+      end
+      update_table_data!
+    end
 
     def space_left(table)
       (@limits[table] || 0) - height(table)
