@@ -28,11 +28,6 @@ module TestDataGenerator
       @data[column.name] = []
     end
 
-    # add a Column using Column.from_spec
-    def add_from_spec!(column_name, type, args = [], options = {})
-      add! ConfigProcess.make_column(column_name, type, args, options)
-    end
-
     def generate!(db)
       @column_names.each do |c|
         # don't generate data for this column if we already have what we need

@@ -54,17 +54,10 @@ module TestDataGenerator
       end
     end
 
-    describe :add_from_spec do
-      it 'adds a column via Column.from_spec()' do
-        @dummy.add_from_spec!(:tries, :number, [max: 10])
-        expect(@dummy.column(:tries).generate).to be_between(0, 10)
-      end
-    end
-
     describe :column_names do
       it 'returns the names of the columns' do
         @dummy.add! @age
-        @dummy.add_from_spec!(:tries, :number, [max: 10])
+        @dummy.add!(ConfigProcess.make_column(:tries, :number, [max: 10]))
         expect(@dummy.column_names).to eq([:age, :tries])
       end
     end
@@ -81,7 +74,7 @@ module TestDataGenerator
     describe :generate! do
       it 'generates a full row' do
         @dummy.add! @age
-        @dummy.add_from_spec!(:tries, :number, [max: 10])
+        @dummy.add!(ConfigProcess.make_column(:tries, :number, [max: 10]))
         10.times do
           test_row(@dummy.generate!({}))
         end
