@@ -28,22 +28,5 @@ module TestDataGenerator
       }
     end
   end
-
-  # Database object will turn this into
-  class DependentColumnStub
-    attr_reader :name, :dependencies
-
-    def initialize(name, generator_type, column_names, generator_options = {})
-      @name = name
-      @gen = generator_type
-      @dependencies = column_names
-      @gen_options = generator_options
-    end
-
-    # @param accumulator [Accumulator] Accumulates column(s) this column depends on
-    def resolve(tables)
-      Column.new(@name, @type.new(accumulator, options))
-    end
-  end
 end
 

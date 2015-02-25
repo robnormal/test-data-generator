@@ -141,11 +141,7 @@ module TestDataGenerator
       min = @gen.minimum(data)
 
       # enforce min requirement, if present
-      if min > current
-        min
-      else
-        current
-      end
+      [min, current].max
     end
 
     def maximum(data = nil)
