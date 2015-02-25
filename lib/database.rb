@@ -2,25 +2,6 @@ require_relative "util"
 require_relative 'weighted_picker'
 
 module TestDataGenerator
-  class StrictHash < Hash
-    def initialize(&blk)
-      if blk
-        @blk = blk
-      else
-        @blk = ->(key) { "No such key: #{key}" }
-      end
-    end
-
-    def [](key)
-      val = super
-      if val.nil?
-        raise(IndexError, @blk.call(key))
-      else
-        val
-      end
-    end
-  end
-
   class Database
     # @param [Database]
     def initialize(tables_limits = {})
