@@ -1,6 +1,6 @@
 require_relative 'test-data-generator'
 
-a = TestDataGenerator::from_config({
+a = TestDataGenerator::make_database({
   authors: [5, [
     [:id],
     [:first_name, :forgery, [:name, :first_name]],
