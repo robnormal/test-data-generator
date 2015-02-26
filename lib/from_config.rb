@@ -1,42 +1,20 @@
 module TestDataGenerator
-  def self.from_config(config)
-    ConfigProcess.from_config(config)
+  def self.make_database(config)
+    DatabaseFactory.make_database(config)
   end
 
-  module ConfigProcess
-    def self.from_config(db_cfg)
+  module DatabaseFactory
+    def self.make_database(db_cfg)
       db = Database.new
 
       db_cfg.each do |table, table_cfg|
         rows, column_cfgs = *table_cfg
 
-        tbl = Table.new(table, self.columns_from_config(column_cfgs, db))
+        tbl = Table.new(table, self.make_columns(column_cfgs, db))
         db.add_table!(tbl, rows)
       end
 
       db
-    end
-
-    def self.columns_from_config(cfgs, db)
-      cfgs.map { |cfg|
-        name, type, args, options = *cfg
-        args ||= []
-        options ||= {}
-
-        if dependent_column?(type, args, options)
-          options[:db] = db
-        end
-
-        make_column(name, type, args, options)
-      }
-    end
-
-    def self.dependent_column?(type, args, options)
-      if type == :belongs_to
-        true
-      else
-        false
-      end
     end
 
     # [table] Table this Column will belong to
@@ -59,6 +37,28 @@ module TestDataGenerator
     end
 
     private
+
+    def self.dependent_column?(type, args, options)
+      if type == :belongs_to
+        true
+      else
+        false
+      end
+    end
+
+    def self.make_columns(cfgs, db)
+      cfgs.map { |cfg|
+        name, type, args, options = *cfg
+        args ||= []
+        options ||= {}
+
+        if dependent_column?(type, args, options)
+          options[:db] = db
+        end
+
+        make_column(name, type, args, options)
+      }
+    end
 
     def self.spec_type(type, name)
       # name-based type magic

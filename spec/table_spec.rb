@@ -57,7 +57,7 @@ module TestDataGenerator
     describe :column_names do
       it 'returns the names of the columns' do
         @dummy.add! @age
-        @dummy.add!(ConfigProcess.make_column(:tries, :number, [max: 10]))
+        @dummy.add!(DatabaseFactory.make_column(:tries, :number, [max: 10]))
         expect(@dummy.column_names).to eq([:age, :tries])
       end
     end
@@ -74,7 +74,7 @@ module TestDataGenerator
     describe :generate! do
       it 'generates a full row' do
         @dummy.add! @age
-        @dummy.add!(ConfigProcess.make_column(:tries, :number, [max: 10]))
+        @dummy.add!(DatabaseFactory.make_column(:tries, :number, [max: 10]))
         10.times do
           test_row(@dummy.generate!({}))
         end

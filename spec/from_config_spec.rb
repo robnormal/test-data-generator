@@ -3,7 +3,7 @@ require "set"
 require_relative "../test-data-generator"
 
 module TestDataGenerator
-  describe :from_config do
+  describe :make_database do
     before :example do
       @config = {
         authors: [3, [
@@ -14,7 +14,7 @@ module TestDataGenerator
         ]]
       }
 
-      @db = TestDataGenerator.from_config(@config)
+      @db = TestDataGenerator.make_database(@config)
 
       @get_data = -> do
         @db.generate_all!
@@ -57,7 +57,7 @@ module TestDataGenerator
         ]]
       }
 
-      db = TestDataGenerator.from_config(config)
+      db = TestDataGenerator.make_database(config)
       db.generate_all!
       data = db.dump
 
@@ -78,7 +78,7 @@ module TestDataGenerator
         ]]
       }
 
-      db = TestDataGenerator.from_config(config)
+      db = TestDataGenerator.make_database(config)
       expect { db.generate_all! }.not_to raise_error
       data = db.dump
 
@@ -96,7 +96,7 @@ module TestDataGenerator
         ]]
       }
 
-      db = TestDataGenerator.from_config(config)
+      db = TestDataGenerator.make_database(config)
       expect { db.generate_all! }.not_to raise_error
       data = db.dump
 
@@ -109,14 +109,14 @@ module TestDataGenerator
   context :make_column do
     describe 'when name is String' do
       it 'converts to Symbol' do
-        col = ConfigProcess.make_column('alpha', :bool)
+        col = DatabaseFactory.make_column('alpha', :bool)
         expect(col.name).to eq(:alpha)
       end
     end
 
     describe 'when name is "id"' do
       it 'produces a unique primary key' do
-        col = ConfigProcess.make_column(:id)
+        col = DatabaseFactory.make_column(:id)
         # TODO: test this a better way, without knowing stuff you shouldn't
         expect(col.instance_variable_get '@generator').to be_a(UniqueGenerator)
       end
@@ -124,7 +124,7 @@ module TestDataGenerator
 
     describe 'when name is "*_at"' do
       it 'produces a timestamp column' do
-        col = ConfigProcess.make_column(:created_at)
+        col = DatabaseFactory.make_column(:created_at)
         # TODO: test this a better way, without knowing stuff you shouldn't
         expect(col.instance_variable_get '@generator').to be_a(DateTimeGenerator)
       end
@@ -132,7 +132,7 @@ module TestDataGenerator
 
     describe 'when type is :forgery' do
       it 'uses third argument Array as args to Forgery' do
-        col = ConfigProcess.make_column(:surname, :forgery, [:name, :last_name])
+        col = DatabaseFactory.make_column(:surname, :forgery, [:name, :last_name])
         expect(col.generate).to be_a(String)
       end
     end
@@ -142,14 +142,14 @@ module TestDataGenerator
 
       it 'uses third argument Array as args to Forgery' do
         setup_belongs([8])
-        col = ConfigProcess.make_column(:user_id, :belongs_to, [:users, :id], db: @db)
+        col = DatabaseFactory.make_column(:user_id, :belongs_to, [:users, :id], db: @db)
         expect(col.generate(DBStub.new [8])).to eq(8)
       end
     end
 
     describe 'when "unique" option is true' do
       it 'produces a UniqueGenerator' do
-        col = ConfigProcess.make_column(:surname, :number, [min: 1, max: 10], unique: true)
+        col = DatabaseFactory.make_column(:surname, :number, [min: 1, max: 10], unique: true)
 
         nums = (1..10).map { col.generate }
         expect(nums).to contain_exactly(*(1..10))
@@ -158,7 +158,7 @@ module TestDataGenerator
 
     describe 'when "null" option is true' do
       it 'produces a NullGenerator' do
-        col = ConfigProcess.make_column(:surname, :number, [max: 8], null: 0.5)
+        col = DatabaseFactory.make_column(:surname, :number, [max: 8], null: 0.5)
 
         has_nil = false
         has_nonnil = false
