@@ -29,6 +29,11 @@ module TestDataGenerator
     end
 
     def generate!(db)
+      # generate needed data
+      needs(db).each do |source, num|
+        db.fulfill_need!(source, num, name)
+      end
+
       @column_names.each do |c|
         # don't generate data for this column if we already have what we need
         if @data[c].length <= @height
@@ -78,8 +83,8 @@ module TestDataGenerator
       @columns.values.map(&:dependencies).flatten.uniq
     end
 
-    def needs(column_data)
-      @columns.map { |_, c| c.needs(column_data) }.flatten(1)
+    def needs(db)
+      @columns.map { |_, c| c.needs(db) }.flatten(1)
     end
 
     def dependencies_as_edges

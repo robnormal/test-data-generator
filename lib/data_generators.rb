@@ -94,8 +94,8 @@ module TestDataGenerator
       post_initialize(args)
     end
 
-    def generate(data = nil)
-      rand_between(minimum(data), maximum(data))
+    def generate(db = nil)
+      rand_between(minimum(db), maximum(db))
     end
   end
 
@@ -136,16 +136,17 @@ module TestDataGenerator
       @col_id = ColumnId.new(*column)
     end
 
-    def minimum(data = nil)
-      current = (data[@col] || []).last || 0
+    def minimum(db = nil)
+      data = db.retrieve_by_id(@col_id)
+      current = (data || []).last || 0
       min = @gen.minimum(data)
 
       # enforce min requirement, if present
       [min, current].max
     end
 
-    def maximum(data = nil)
-      @gen.maximum(data)
+    def maximum(db = nil)
+      @gen.maximum(db)
     end
 
     def dependencies
@@ -177,8 +178,8 @@ module TestDataGenerator
       @null = null
     end
 
-    def generate(input = nil)
-      rand < @null ? nil : @generator.generate(input)
+    def generate(db = nil)
+      rand < @null ? nil : @generator.generate(db)
     end
   end
 
@@ -240,12 +241,13 @@ module TestDataGenerator
 
     # @param [Hash{ Array(String,String) => Array]
     #   data for columns depended on
-    def generate(column_data)
-      if column_data[@column_a].nil?
+    def generate(db)
+      data = db.retrieve_by_id(@column)
+      if data.nil?
         raise(ArgumentError, "Missing required data for column: #{@column}")
       end
 
-      column_data[@column_a].sample
+      data.sample
     end
 
     def dependencies
@@ -266,8 +268,8 @@ module TestDataGenerator
     end
 
     # must update @unused before checking for empty
-    def generate(data)
-      update_unused(data)
+    def generate(db)
+      update_unused(db)
       super @unused
     end
 
@@ -304,8 +306,8 @@ module TestDataGenerator
     end
 
     private
-    def update_unused(column_data)
-      data = column_data[@column_a]
+    def update_unused(db)
+      data = db.retrieve_by_id(@column)
 
       @unused += data.drop @grabbed
       @grabbed = data.length

@@ -14,6 +14,16 @@ module TestDataGenerator
     end
   end
 
+  class DBStub
+    def initialize(data)
+      @data = data
+    end
+
+    def retrieve_by_id(_)
+      @data
+    end
+  end
+
   module TestFixtures
     def setup_belongs(data)
       @refs = {}

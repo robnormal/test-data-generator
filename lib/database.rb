@@ -41,7 +41,7 @@ module TestDataGenerator
 
     def generate!
       pick_table.fmap do |table|
-        generate_for! table
+        generate_row! table
       end
     end
 
@@ -61,17 +61,20 @@ module TestDataGenerator
     end
 
     def dump
-      output = {}
+      fmap(@tables) do |t|
+        rows = []
 
-      table_names.map do |t|
-        output[t] = []
-
-        each_row(t) do |row|
-          output[t] << row
+        each_row(t.name) do |row|
+          rows << row
         end
-      end
 
-      output
+        rows
+      end
+    end
+
+    def fulfill_need!(source_id, num, target)
+      require_space(source_id.table, num, target)
+      @tables[source_id.table].fulfill_need!(source_id.column, num, self)
     end
 
 
@@ -116,31 +119,6 @@ module TestDataGenerator
       reset!
     end
 
-    def generate_for!(table)
-      fulfill_needs! table
-
-      t = @tables[table]
-
-      # gather depended-on data
-      data = {}
-      t.dependencies.each do |col_id|
-        data[col_id.to_a] = retrieve_by_id(col_id)
-      end
-
-      generate_row!(table, data)
-    end
-
-    def fulfill_needs!(table)
-      @tables[table].needs(self).each do |source, num|
-        fulfill_need!(source, num, table)
-      end
-    end
-
-    def fulfill_need!(source_id, num, target)
-      require_space(source_id.table, num, target)
-      @tables[source_id.table].fulfill_need!(source_id.column, num, self)
-    end
-
     def require_space(source, num, target)
       if space_left(source) < num
         raise(RuntimeError, "Unable to fulfill requirements for " +
@@ -157,9 +135,12 @@ module TestDataGenerator
         end
     end
 
-    def generate_row!(table, data)
-      @tables[table].generate!(data)
+    def generate_row!(table)
+      @tables[table].generate!(self)
+      check_space!(table);
+    end
 
+    def check_space!(table)
       if space_left(table) <= 0
         @limits.delete table
         create_thresholds!
