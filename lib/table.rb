@@ -8,9 +8,10 @@ module TestDataGenerator
     attr_reader :name, :column_names, :height
 
     def initialize(name, columns = [])
-      @name          = name.to_sym
-      @columns       = {}
-      @column_names  = []
+      @name         = name.to_sym
+      @column_hash  = {}
+      @columns      = []
+      @column_names = []
 
       columns.each do |c| add_raw!(c) end
       reset!
@@ -62,11 +63,11 @@ module TestDataGenerator
     end
 
     def columns
-      @columns.keys
+      @column_names
     end
 
     def column(column_name)
-      @columns[column_name]
+      @column_hash[column_name]
     end
 
     def retrieve(col_name)
@@ -80,33 +81,38 @@ module TestDataGenerator
     end
 
     def dependencies
-      @columns.values.map(&:dependencies).flatten.uniq
+      list_bind(@columns, &:dependencies).uniq
     end
 
     def needs(db)
-      @columns.map { |_, c| c.needs(db) }.flatten(1)
+      list_bind(@columns) { |c| c.needs(db) }
     end
 
     def dependencies_as_edges
-      @columns.map { |_, c|
-        my_id = ColumnId.new(name, c.name)
-        c.dependencies.map { |col_id|
-          GraphEdge.new(my_id, col_id)
-        }
-      }.flatten
+      list_bind(@columns) { |c|
+        column_dependency_edges(c)
+      }
     end
 
 
     private
 
+    def column_dependency_edges(c)
+      my_id = ColumnId.new(name, c.name)
 
-    def add_raw!(column)
-      @columns[column.name] = column
-      @column_names << column.name
+      c.dependencies.map { |col_id|
+        GraphEdge.new(my_id, col_id)
+      }
     end
 
-    def generate_column!(column, db)
-      @data[column] << @columns[column].generate(db)
+    def add_raw!(column)
+      @columns << column
+      @column_names << column.name
+      @column_hash[column.name] = column
+    end
+
+    def generate_column!(col, db)
+      @data[col] << column(col).generate(db)
     end
 
   end

@@ -95,7 +95,7 @@ module TestDataGenerator
     def dependency_graph
       if @dep_graph.nil?
         @dep_graph = DirectedGraph.new(
-          @tables.map { |k, table| table.dependencies_as_edges }.flatten
+          list_bind(@tables) { |_, t| t.dependencies_as_edges }
         )
       end
 

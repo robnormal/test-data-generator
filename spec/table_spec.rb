@@ -16,6 +16,7 @@ def col_stub
     dependencies: [
       TestDataGenerator::ColumnId.new(:table1, :column1)
     ],
+    needs: []
   )
 end
 

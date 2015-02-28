@@ -78,6 +78,10 @@ def hash_subset(hash, keys)
   h
 end
 
+def list_bind(list, &blk)
+  list.map(&blk).flatten(1)
+end
+
 def fmap(obj, &blk)
   if obj.is_a? Hash
     h = {}
