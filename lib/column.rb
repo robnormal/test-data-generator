@@ -19,13 +19,22 @@ module TestDataGenerator
       @generator = generator
       @name = name.to_sym
     end
+  end
 
-    def dependency_edges(my_table)
-      my_id = ColumnId.new(my_table, name)
+  # Database object will turn this into
+  class DependentColumnStub
+    attr_reader :name, :dependencies
 
-      dependencies.map { |col_id|
-        GraphEdge.new(my_id, col_id)
-      }
+    def initialize(name, generator_type, column_names, generator_options = {})
+      @name = name
+      @gen = generator_type
+      @dependencies = column_names
+      @gen_options = generator_options
+    end
+
+    # @param accumulator [Accumulator] Accumulates column(s) this column depends on
+    def resolve(tables)
+      Column.new(@name, @type.new(accumulator, options))
     end
   end
 end

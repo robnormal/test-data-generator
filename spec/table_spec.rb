@@ -13,10 +13,9 @@ end
 def col_stub
   col = double('Column',
     name: :stub,
-    dependency_edges: [GraphEdge.new(
-      TestDataGenerator::ColumnId.new(:test, :stub),
+    dependencies: [
       TestDataGenerator::ColumnId.new(:table1, :column1)
-    )],
+    ],
   )
 end
 
