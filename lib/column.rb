@@ -9,7 +9,7 @@ module TestDataGenerator
     include Generator
     extend Forwardable
 
-    attr_reader :name
+    attr_reader :name, :data
 
     def_delegators(:@generator, :generate, :dependencies, :needs)
 
@@ -18,6 +18,17 @@ module TestDataGenerator
     def initialize(name, generator)
       @generator = generator
       @name = name.to_sym
+      reset!
+    end
+
+    def reset!
+      @data = []
+    end
+
+    def generate(db = nil)
+      datum = @generator.generate(db)
+      @data << datum
+      datum
     end
   end
 
