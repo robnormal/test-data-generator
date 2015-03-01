@@ -13,6 +13,7 @@ end
 def col_stub
   col = double('Column',
     name: :stub,
+    generate!: 0,
     dependencies: [
       TestDataGenerator::ColumnId.new(:table1, :column1)
     ],

@@ -11,7 +11,7 @@ module TestDataGenerator
 
     attr_reader :name, :data
 
-    def_delegators(:@generator, :generate, :dependencies, :needs)
+    def_delegators(:@generator, :dependencies, :needs)
 
     # [name] name of this column
     # [generator] Generator used by this Column
@@ -25,7 +25,7 @@ module TestDataGenerator
       @data = []
     end
 
-    def generate(db = nil)
+    def generate!(db = nil)
       datum = @generator.generate(db)
       @data << datum
       datum

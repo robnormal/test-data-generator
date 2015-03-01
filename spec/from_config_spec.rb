@@ -133,7 +133,7 @@ module TestDataGenerator
     describe 'when type is :forgery' do
       it 'uses third argument Array as args to Forgery' do
         col = DatabaseFactory.make_column(:surname, :forgery, [:name, :last_name])
-        expect(col.generate).to be_a(String)
+        expect(col.generate!).to be_a(String)
       end
     end
 
@@ -143,7 +143,7 @@ module TestDataGenerator
       it 'uses third argument Array as args to Forgery' do
         setup_belongs([8])
         col = DatabaseFactory.make_column(:user_id, :belongs_to, [:users, :id], db: @db)
-        expect(col.generate(DBStub.new [8])).to eq(8)
+        expect(col.generate!(DBStub.new [8])).to eq(8)
       end
     end
 
@@ -151,7 +151,7 @@ module TestDataGenerator
       it 'produces a UniqueGenerator' do
         col = DatabaseFactory.make_column(:surname, :number, [min: 1, max: 10], unique: true)
 
-        nums = (1..10).map { col.generate }
+        nums = (1..10).map { col.generate! }
         expect(nums).to contain_exactly(*(1..10))
       end
     end
@@ -164,7 +164,7 @@ module TestDataGenerator
         has_nonnil = false
         count = 0
         until (has_nil && has_nonnil) || count > 100000
-          if col.generate.nil?
+          if col.generate!.nil?
             has_nil = true
           else
             has_nonnil = true

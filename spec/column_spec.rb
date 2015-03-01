@@ -13,15 +13,15 @@ module TestDataGenerator
       expect(@num.name).to eq(:age)
     end
 
-    describe :generate do
+    describe :generate! do
       it 'uses given generator to produce one datum' do
-        expect(@num.generate).to be_between(18, 100)
+        expect(@num.generate!).to be_between(18, 100)
       end
     end
 
     describe :data do
       it 'retrieves generated data' do
-        3.times { @num.generate }
+        3.times { @num.generate! }
 
         expect(@num.data.length).to be 3
       end
@@ -29,7 +29,7 @@ module TestDataGenerator
 
     describe :reset! do
       it 'deletes generated data' do
-        3.times { @num.generate }
+        3.times { @num.generate! }
         @num.reset!
 
         expect(@num.data.length).to be 0

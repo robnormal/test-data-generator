@@ -112,7 +112,7 @@ module TestDataGenerator
     end
 
     def generate_column!(col, db)
-      @data[col] << column(col).generate(db)
+      @data[col] << column(col).generate!(db)
     end
 
   end
