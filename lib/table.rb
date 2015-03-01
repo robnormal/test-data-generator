@@ -17,16 +17,15 @@ module TestDataGenerator
       reset!
     end
 
-    def fulfill_need!(column, num, db)
+    def fulfill_need!(col, num, db)
       num.times do
-        generate_column!(column, db)
+        generate_column!(column(col), db)
       end
     end
 
     # add a Column to the table
     def add!(column)
       add_raw!(column)
-      @data[column.name] = []
     end
 
     def generate!(db)
@@ -35,9 +34,9 @@ module TestDataGenerator
         db.fulfill_need!(source, num, name)
       end
 
-      @column_names.each do |c|
+      @columns.each do |c|
         # don't generate data for this column if we already have what we need
-        if @data[c].length <= @height
+        if c.size <= @height
           generate_column!(c, db)
         end
       end
@@ -55,10 +54,9 @@ module TestDataGenerator
 
     def reset!
       @height = 0
-      @data = {}
 
-      @column_names.each do |c|
-        @data[c] = []
+      @columns.each do |c|
+        c.reset!
       end
     end
 
@@ -71,7 +69,7 @@ module TestDataGenerator
     end
 
     def retrieve(col_name)
-      @data[col_name]
+      column(col_name).data
     end
 
     def row(num)
@@ -111,8 +109,8 @@ module TestDataGenerator
       @column_hash[column.name] = column
     end
 
-    def generate_column!(col, db)
-      @data[col] << column(col).generate!(db)
+    def generate_column!(column, db)
+      column.generate!(db)
     end
 
   end
