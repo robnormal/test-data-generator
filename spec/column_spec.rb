@@ -27,6 +27,14 @@ module TestDataGenerator
       end
     end
 
+    describe :size do
+      it 'returns number of pieces of data generated' do
+        3.times { @num.generate! }
+
+        expect(@num.size).to be 3
+      end
+    end
+
     describe :reset! do
       it 'deletes generated data' do
         3.times { @num.generate! }

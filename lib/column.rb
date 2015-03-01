@@ -21,6 +21,10 @@ module TestDataGenerator
       reset!
     end
 
+    def size
+      data.length
+    end
+
     def reset!
       @data = []
     end

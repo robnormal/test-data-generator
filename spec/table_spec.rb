@@ -11,7 +11,7 @@ def gen_stub
 end
 
 def col_stub
-  col = double('Column',
+  double('Column',
     name: :stub,
     generate!: 0,
     dependencies: [
